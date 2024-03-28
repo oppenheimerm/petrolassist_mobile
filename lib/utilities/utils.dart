@@ -1,8 +1,12 @@
+import 'dart:io';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import '../resources/colours.dart';
 
 class Utils {
+  // Make this constructor private; preventing any instantiation.  This
+  // allows us to call below static function via this class
+  Utils._();
 
   static double? getRandomHeight() {
     //  Use final when you need variables that cannot be reassigned
@@ -23,17 +27,14 @@ class Utils {
 
   /// Manages focus traversal to the scoped controls of this [context],
   /// also takes a [current] and [nextFocus] parameter.
-  static void fieldFocusChange(
-      BuildContext context,
+  static void fieldFocusChange(BuildContext context,
       FocusNode current,
-      FocusNode nextFocus
-      ) {
+      FocusNode nextFocus) {
     current.unfocus();
     FocusScope.of(context).requestFocus(nextFocus);
   }
 
-  static void changeFocusNode(
-      BuildContext context,
+  static void changeFocusNode(BuildContext context,
       {required FocusNode current, required FocusNode next}) {
     current.unfocus();
     FocusScope.of(context).requestFocus(next);
@@ -49,7 +50,7 @@ class Utils {
           message,
           style: const TextStyle(
             fontSize: 16,
-            color: AppColours.whiteColour,
+            color: AppColours.paWhiteColour,
           ),
         ),
         showCloseIcon: true,
@@ -57,6 +58,44 @@ class Utils {
         elevation: 2,
       ),
     );
+  }
+
+  /// adjust brightness if is in dark mode.
+  ///
+  static bool isDarkMode(BuildContext context) {
+    return Theme
+        .of(context)
+        .brightness == Brightness.dark;
+  }
+
+  static String truncateText(String text, int maxLength) {
+    if (text.length <= maxLength) {
+      return text;
+    } else {
+      return '${text.substring(0, maxLength)}...';
+    }
+  }
+
+  double getScreenHeight(BuildContext context) {
+    return MediaQuery
+        .of(context)
+        .size
+        .height;
+  }
+
+  double getScreenWidth(BuildContext context) {
+    return MediaQuery
+        .of(context)
+        .size
+        .width;
+  }
+
+  static bool isIos(){
+    return Platform.isIOS;
+  }
+
+  static bool isAndroid(){
+    return Platform.isAndroid;
   }
 
 }

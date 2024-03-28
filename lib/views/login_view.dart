@@ -2,12 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../app_constants.dart';
-import '../components/component_bkgrd_img.dart';
-import '../components/component_checkCircle_icon.dart';
-import '../components/component_frosted_glass.dart';
-import '../components/component_headline_text.dart';
-import '../components/component_round_button.dart';
 import '../resources/colours.dart';
+import '../resources/spacing_styles.dart';
+import '../resources/styles_constants.dart';
+import '../resources/text_string.dart';
 import '../utilities/utils.dart';
 import '../view_models/auth_vm.dart';
 
@@ -41,42 +39,34 @@ class _LoginViewState extends State<LoginView> {
   final FocusNode _emailFocusNode = FocusNode();
   final FocusNode _passwordFocusNode = FocusNode();
 
-  //  Use trim() method removes any leading / trailing  from user input before
-  //  using it in the application
-  /*Map<String, dynamic> getUserCredentials() {
-    return {
-      "email": _emailController.text.trim().toString(),
-      "password": _passwordController.text.trim().toString(),
-    };
-  }*/
 
   //  By properly disposing of resources and unregistering event listeners, you
   //  ensure that your app is efficient and responsive, even as widgets are created
   //  and destroyed
-    @override
-    void dispose() {
-      _emailController.dispose();
-      _passwordController.dispose();
-      _emailFocusNode.dispose();
-      _passwordFocusNode.dispose();
-      _obscurePass.dispose();
-      super.dispose();
-    }
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    _emailFocusNode.dispose();
+    _passwordFocusNode.dispose();
+    _obscurePass.dispose();
+    super.dispose();
+  }
 
-    double getContextHeight(BuildContext context){
-      return MediaQuery.of(context).size.height;
-    }
+  /*double getContextHeight(BuildContext context){
+    return MediaQuery.of(context).size.height;
+  }
 
   double getContextWidth(BuildContext context){
     return MediaQuery.of(context).size.width;
-  }
+  }*/
 
   @override
   Widget build(BuildContext context) {
 
-    final double height = MediaQuery.of(context).size.height;
-    final width = MediaQuery.of(context).size.width;
-
+    //final double height = MediaQuery.of(context).size.height;
+    //final width = MediaQuery.of(context).size.width;
+    final dark = Utils.isDarkMode(context);
 
     //  Validate our text fields
     void textFieldValidate() async {
@@ -118,60 +108,128 @@ class _LoginViewState extends State<LoginView> {
       }
     }
 
-    return PopScope(
+    return Scaffold(
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: PASpacingStyles.paddingWithAppbarHeight,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: PAAppStylesConstants.spaceBetweenSections),
+            child: Column(
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Image(
+                      height: 140,
+                      image: AssetImage( dark ? AppConsts.appLogoLightMode : AppConsts.appLogoDarkMode),
+                    ),
+                    const SizedBox(height: PAAppStylesConstants.sm,),
+                    Text(PATextString.loginTitle, style: Theme.of(context).textTheme.headlineSmall),
+                    const SizedBox(height: PAAppStylesConstants.sm,),
+                    Text(PATextString.loginSubtitle, style: Theme.of(context).textTheme.headlineMedium),
+                    const SizedBox(height: PAAppStylesConstants.sm,),
+                    const SizedBox(height: PAAppStylesConstants.spaceBetweenSections,),
+                  ],
+                ),
 
-      //  When false, blocks the current route from being popped.
-      //  https://api.flutter.dev/flutter/widgets/PopScope/canPop.html
-      //// Android User's can simply exit from app by pressing back button
-      canPop: true,
-        child: Scaffold(
-          body: Stack(
-            children: [
-              const BackgroundImage(imageUrl: "assets/images/bg_1.jpg", fit: BoxFit.cover),
-          FrostedGlassBox(
-            height: height * .7,
-            width: width < 450 ? double.infinity : 480,
-            child: login(height, textFieldValidate, context),
-          ),
-            ],
+                // Form
+                Form(
+                    child: Column(
+                      children: [
+                        email(),
+                        const SizedBox(height: PAAppStylesConstants.spaceBetweenInputFields,),
+                        password(),
+                        const SizedBox(height: PAAppStylesConstants.spaceBetweenInputFields / 2,),
+                        //  Remember me
+                        //  Forgot password
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                //  Remember me
+                                Checkbox(value: true, onChanged: (value){}),
+                                const Text(PATextString.rememberMe),
+                              ],
+                            ),
+
+                            //  Forgot password
+                            //Text(PATextString.loginTitle, style: Theme.of(context).textTheme.headlineMedium),
+                            TextButton(onPressed: (){}, child: Text( PATextString.forgotPassword,
+                                style: Theme.of(context).textTheme.bodySmall))
+                          ],
+                        ),
+
+                        const SizedBox(height: PAAppStylesConstants.spaceBetweenSections,),
+
+                        // sign in button
+                        //  To make this button full with of the form, we need to wrap this widget
+                        // a sized box, and set if width to full (infinity)
+
+
+                        Consumer<AuthViewModel>(
+                          builder: (context, value, child){
+                            return SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                  child: const Text(PATextString.login),
+                                  onPressed: (){
+                                    textFieldValidate();
+                                  }),
+                            );
+                          },
+                        ),
+
+                        const SizedBox(height: PAAppStylesConstants.spaceBetweenItems,),
+                        // Create account button
+                        SizedBox(
+                          //width: double.infinity,
+                          child: GestureDetector(
+                            onTap: () {
+                              Navigator.pushReplacementNamed(context, AppConsts.rootRegister);
+                            },
+                            child: SizedBox(
+                              width: double.infinity,
+                              child: OutlinedButton(
+                                onPressed: (){
+                                  Navigator.pushReplacementNamed(context, AppConsts.rootRegister);
+                                }, child: const Text(PATextString.createAccount),
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: PAAppStylesConstants.spaceBetweenSections,),
+
+                      ],
+                    ),
+                ),
+
+                //  Divider
+                /*Row(
+                  //  Center row
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Flexible(
+                      child: Divider(color: dark ? AppColours.paWhiteColour : AppColours.paGreyColour,
+                        thickness: 0.5, indent: 60, endIndent: 5,),
+                    )
+
+                  ],
+                ),*/
+
+              ],
+            ),
           ),
         ),
-    );
-  }
-
-  Padding login(
-      double height,
-      void Function() textFieldValidate, BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 28.0),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const CheckCircleIcon(),
-          SizedBox(height: height * .03),
-          const Headline(title: "PetrolAssist", colour: AppColours.blackColour1,),
-          SizedBox(height: height * .04),
-          email(),
-          SizedBox(height: height * .02),
-          password(),
-          SizedBox(height: height * .05),
-          Consumer<AuthViewModel>(
-            builder: (context, value, child) {
-              return RoundButton(
-                  title: "Login",
-                  loading: value.loginLoading,
-                  onTap: () {
-                    textFieldValidate();
-                  });
-            },
-          ),
-          SizedBox(height: height * .02),
-          buildSignUpQueryOption(context),
-        ],
       ),
     );
+
   }
-  Widget buildSignUpQueryOption(BuildContext context) {
+
+
+
+  /*Widget buildSignUpQueryOption(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -204,72 +262,54 @@ class _LoginViewState extends State<LoginView> {
         ),
       ],
     );
-  }
+  }*/
 
-  ValueListenableBuilder<bool> password() {
-    return ValueListenableBuilder(
-      valueListenable: _obscurePass,
-      builder: (context, value, child) {
-        return TextField(
-          controller: _passwordController,
-          obscureText: value,
-          obscuringCharacter: '#', // Password secured by showing -> #######
-          focusNode: _passwordFocusNode,
-          decoration: InputDecoration(
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(40),
-            ),
-            filled: true,
-            fillColor: AppColours.blackColour1.withOpacity(0.85),
-            hintText: "Password",
-            prefixIcon: const Icon(Icons.lock_sharp),
-            suffixIcon: InkWell(
-              onTap: () {
-                _obscurePass.value = !_obscurePass.value;
-              },
-              child: Icon(
-                _obscurePass.value
-                    ? Icons.visibility_off_sharp
-                    : Icons.visibility_sharp,
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  TextField email() {
-    return TextField(
-      style: const TextStyle(
-      ),
+  TextFormField email() {
+    return TextFormField(
       controller: _emailController,
-      keyboardType: TextInputType.emailAddress,
       focusNode: _emailFocusNode,
-      onSubmitted: (value) {
+      keyboardType: TextInputType.emailAddress,
+      onFieldSubmitted: ( value ) {
         // After submitting email, click done on keyboard, focus on the password bar
         Utils.changeFocusNode(context,
             current: _emailFocusNode, next: _passwordFocusNode);
       },
-      decoration: InputDecoration(
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(40),
-        ),
-        filled: true,
-        fillColor: AppColours.blackColour1.withOpacity(0.85),
-        hintText: "Email",
-        hintStyle: const TextStyle(
-          color: Colors.white,
-        ),
-        prefixIcon: const Icon(Icons.email_sharp),
-        enabledBorder: OutlineInputBorder(
-          borderSide: const BorderSide(
-            color: Colors.white,
-          ),
-          borderRadius: BorderRadius.circular(40),
-        ),
+      decoration: const InputDecoration(
+        prefixIcon: Icon(Icons.email_sharp),
+        labelText: PATextString.emailAddress
       ),
     );
   }
+
+  ValueListenableBuilder<bool>password(){
+    return ValueListenableBuilder(
+      valueListenable: _obscurePass,
+        builder: (context, value, child) {
+          return TextFormField(
+            focusNode: _passwordFocusNode,
+            controller: _passwordController,
+            obscureText: value,
+            obscuringCharacter: '#', // Password secured by showing -> #######
+            decoration: InputDecoration(
+                prefixIcon: const Icon(Icons.lock_sharp),
+                labelText: PATextString.password,
+                suffixIcon: InkWell(
+                  onTap: (){
+                    _obscurePass.value = !_obscurePass.value;
+                  },
+                  child: Icon(
+                    _obscurePass.value
+                        ? Icons.visibility_off_sharp
+                        : Icons.visibility_sharp,
+                  ),
+                ),
+                hintText: "Password",
+
+            ),
+          );
+        }
+    );
+  }
+
 
 }

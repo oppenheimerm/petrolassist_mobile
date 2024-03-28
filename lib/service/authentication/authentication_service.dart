@@ -148,26 +148,9 @@ class AuthenticationService implements AuthenticationServiceBase{
       }
     }
     else{
-
-      //   Is this the first run of the app?
-      var isFirstRun  = await  LocalStorageService.isFirstRun().then((value) {
-        //https://www.youtube.com/watch?v=GYtMpccOOtU&list=PL5jb9EteFAODGVTOQv8Ch-OS-19897E0V&index=3
-        if(value){
-          // true so we need the splash screen
-          authenticationRequestResponse = AuthenticationRequestResponse(
-              UserModel.getNullUser(),
-              false,
-              "",
-              AppConsts.showSplashScreen);
-        }
-        else{
-          authenticationRequestResponse = AuthenticationRequestResponse(UserModel.getNullUser(),
-              false, "Please log in", AppConsts.noSavedUserInstance);
-          return authenticationRequestResponse;
-        }
-
-      });
-
+      authenticationRequestResponse = AuthenticationRequestResponse(UserModel.getNullUser(),
+          false, "Please log in", AppConsts.noSavedUserInstance);
+      return authenticationRequestResponse;
     }
 
     //  If we got here we have a failure
