@@ -79,11 +79,15 @@ AuthStatus authStatusFromString(String string){
 
 class AppConsts{
 
+  // Logo routs
+  static const String appLogoDarkMode =  "assets/images/logos/logo-light.png";
+  static const String appLogoLightMode = "assets/images/logos/logo-dark.png";
+
   //  Routes
   static const String rootSplash = "/splash";
   static const String rootLogin = "/login";
   static const String rootHome = "/home";
-  static const String rootSignup = "/signup";
+  static const String rootRegister = "/register";
 
   //static const String baseUrl = "https://psusersapi.azurewebsites.net";
   //static const String baseUrl = "http://192.168.1.152:8000";
@@ -92,8 +96,6 @@ class AppConsts{
 
 //  Keys
 
-  // variable to determine if we need to show the splash screen
-  static const String isFirstRun = "isFirstRun";
 
   //    UserModel keys for storage
   static const String userId = 'id';
@@ -112,7 +114,6 @@ class AppConsts{
   static const int operationSuccess = 0;
   static const int refreshedTokensForUser = 1;
   static const int persistedUserToStorage = 2;
-  static const int showSplashScreen = 3;
 
   //  const message types
   //    3000 range Errors

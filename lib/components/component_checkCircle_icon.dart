@@ -15,7 +15,7 @@ class CheckCircleIcon extends StatelessWidget {
     return Icon(
       Icons.check_circle_outline_outlined,
 
-      color: AppColours.whiteColour,
+      color: AppColours.paWhiteColour,
       size: size,
     );
   }

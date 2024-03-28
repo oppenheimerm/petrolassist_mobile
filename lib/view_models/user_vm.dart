@@ -24,11 +24,6 @@ class UserViewModel with ChangeNotifier {
         {
           await Navigator.pushReplacementNamed(context, AppConsts.rootHome);
         }
-      else if(value.errorType == AppConsts.showSplashScreen)
-        {
-          // show OnBoarding screen
-          //await Navigator.pushReplacementNamed(context, AppConsts.rootLogin);
-        }
       else{
         var errorMessage = (value.errorMessage != null) ? value.errorMessage : "Please login.";
         Utils.snackBar(errorMessage!, context);

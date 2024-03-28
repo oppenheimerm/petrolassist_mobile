@@ -152,48 +152,6 @@ class LocalStorageService {
     }
   }
 
-
-  /*static Future<OperationStatus> persistUser(UserModel userToSave) async {
-    try {
-
-      await _preferences?.setString( AppConsts.userId, userToSave.id);
-      await _preferences?.setString( AppConsts.firstName, userToSave.firstName);
-      await _preferences?.setString( AppConsts.lastName, userToSave.lastName);
-      await _preferences?.setString( AppConsts.jwtToken, userToSave.jwtToken);
-      await _preferences?.setString( AppConsts.initials, userToSave.initials);
-      await _preferences?.setString( AppConsts.photo, userToSave.photo);
-      await _preferences?.setString( AppConsts.emailAddress, userToSave.emailAddress);
-      await _preferences?.setString( AppConsts.authStatus, userToSave.authStatus.toString());
-      await _preferences?.setString( AppConsts.loginTimeStamp, userToSave.loginTimeStamp.toString());
-      //  Make sure below is not null
-      await _preferences?.setString( AppConsts.refreshToken, userToSave.refreshToken.toString());
-      await _preferences?.setString( AppConsts.refreshTokenExpiry, userToSave.refreshTokenExpiry.toString());
-
-      return OperationStatus(true, 'Successfully saved user data.', AppConsts.OPERATION_SUCCESS);
-    } catch (err) {
-      return OperationStatus(false, err.toString(), AppConsts.COULD_NOT_PERSIST_USER);
-    }
-  }*/
-
-  /* Works but I wish to test the splash screen use fake below
-  static Future<bool> isFirstRun() async {
-    bool? firstRunComplete =  _preferences?.getBool(AppConsts.isFirstRun);
-    if(firstRunComplete == null){
-      return true;
-    }else{
-      await _preferences!.setBool(AppConsts.isFirstRun, false);
-      return false;
-    }
-  }
-
-   */
-
-  static Future<bool> isFirstRun() async {
-    return true;
-  }
-
-
-
   static OperationStatus saveStringToDisk(String key, String content) {
 
     //_preferences.setString(UserKey, content);
@@ -201,7 +159,7 @@ class LocalStorageService {
     //  put a question mark (?) before the dot (.):
     try {
       _preferences?.setString(key, content);
-      return OperationStatus(true, 'Save user with $key and valie: $content', AppConsts.operationSuccess);
+      return OperationStatus(true, 'Saved user with $key and value: $content', AppConsts.operationSuccess);
     } catch (err) {
       return OperationStatus(false, 'Could not save data with $key.', AppConsts.couldNotPersistKeyValue);
     }

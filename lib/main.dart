@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:petrol_assist_mobile/resources/theme.dart';
 import 'package:petrol_assist_mobile/service/locator.dart';
 import 'package:petrol_assist_mobile/view_models/auth_vm.dart';
 import 'package:petrol_assist_mobile/view_models/user_vm.dart';
@@ -30,7 +31,6 @@ Future<void> main() async {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
@@ -46,15 +46,14 @@ class MyApp extends StatelessWidget {
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
-        title: 'Movies App (MVVM Architecture)',
+        themeMode: ThemeMode.system, /* set theme to current system theme */
+        title: 'PetrolAssist',
         //  https://docs.flutter.dev/cookbook/design/fonts
-        theme: ThemeData(
-          fontFamily: 'DM Sans',
-          colorScheme: const ColorScheme.dark(),
-          textTheme: const TextTheme(
-
-          ),
-        ),
+        /*
+          Default theme is the light theme
+        */
+        theme : PATheme.lightTheme,
+        darkTheme: PATheme.darkTheme,
         initialRoute: AppConsts.rootSplash,
         onGenerateRoute: Routes.generateRoute,
       ),

@@ -177,7 +177,7 @@ class _SignUpViewState extends State<SignUpView> {
                   onTap: () {
                     textFieldValidate();
                   });
-              },
+            },
           ),
           SizedBox(height: height * .02),
           buildLoginQueryOption(context),
@@ -224,14 +224,14 @@ class _SignUpViewState extends State<SignUpView> {
   TextField firstName(){
     return TextField(
       style: const TextStyle(),
-        controller: _firstNameController,
-        keyboardType: TextInputType.text,
-        focusNode: _firstNameFocusNode,
-        onSubmitted: (value) {
-          // After submitting email, click done on keyboard, focus on the password bar
-          Utils.changeFocusNode(context,
-              current: _firstNameFocusNode, next: _lastNameFocusNode);
-        },
+      controller: _firstNameController,
+      keyboardType: TextInputType.text,
+      focusNode: _firstNameFocusNode,
+      onSubmitted: (value) {
+        // After submitting email, click done on keyboard, focus on the password bar
+        Utils.changeFocusNode(context,
+            current: _firstNameFocusNode, next: _lastNameFocusNode);
+      },
       decoration: InputDecoration(
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(40),
@@ -434,9 +434,9 @@ class _SignUpViewState extends State<SignUpView> {
     return Center(
       child: CheckboxListTile(
         title: const Text(
-            "Accept Terms", style: TextStyle(
-          fontWeight: FontWeight.bold,
-          fontSize: 20
+          "Accept Terms", style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 20
         ),),
         value: _acceptTerms,
         onChanged: (bool? value){

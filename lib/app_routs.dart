@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:petrol_assist_mobile/views/home_view.dart';
 import 'package:petrol_assist_mobile/views/login_view.dart';
+import 'package:petrol_assist_mobile/views/register_view.dart';
 import 'package:petrol_assist_mobile/views/route_not_found.dart';
-import 'package:petrol_assist_mobile/views/signup_view.dart';
 import 'package:petrol_assist_mobile/views/splash_view.dart';
 import 'app_constants.dart';
 
@@ -23,9 +23,9 @@ class Routes {
         return MaterialPageRoute(
           builder: (context) => const HomeView(),
         );
-      case AppConsts.rootSignup:
+      case AppConsts.rootRegister:
         return MaterialPageRoute(
-          builder: (context) => const SignUpView(),
+          builder: (context) => const RegisterView(),
         );
       default:
         return MaterialPageRoute(
