@@ -76,14 +76,14 @@ class Utils {
     }
   }
 
-  double getScreenHeight(BuildContext context) {
+  static double getScreenHeight(BuildContext context) {
     return MediaQuery
         .of(context)
         .size
         .height;
   }
 
-  double getScreenWidth(BuildContext context) {
+  static double getScreenWidth(BuildContext context) {
     return MediaQuery
         .of(context)
         .size

@@ -19,8 +19,8 @@ class PATextStyles{
     bodyMedium: const TextStyle().copyWith( fontSize: 14, fontWeight: FontWeight.w400, color: AppColours.paBlackColour1 ),
     bodySmall: const TextStyle().copyWith( fontSize: 14, fontWeight: FontWeight.w500, color: AppColours.paBlackColour1 ),
 
-    labelLarge: const TextStyle().copyWith( fontSize: 12, fontWeight: FontWeight.w500, color: AppColours.paBlackColour1 ),
-    labelMedium: const TextStyle().copyWith( fontSize: 12, fontWeight: FontWeight.w500, color: AppColours.paBlackColour1.withOpacity(0.7) ),
+    labelLarge: const TextStyle().copyWith( fontSize: 12.8, fontWeight: FontWeight.w500, color: AppColours.paBlackColour1 ),
+    labelMedium: const TextStyle().copyWith( fontSize: 12.8, fontWeight: FontWeight.w500, color: AppColours.paBlackColour1.withOpacity(0.7) ),
   );
 
   static TextTheme darkTextTheme = TextTheme(
@@ -36,8 +36,8 @@ class PATextStyles{
     bodyMedium: const TextStyle().copyWith( fontSize: 14, fontWeight: FontWeight.w400, color: Colors.white ),
     bodySmall: const TextStyle().copyWith( fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white ),
 
-    labelLarge: const TextStyle().copyWith( fontSize: 12, fontWeight: FontWeight.w500, color: Colors.white ),
-    labelMedium: const TextStyle().copyWith( fontSize: 12, fontWeight: FontWeight.w500, color: Colors.white ),
+    labelLarge: const TextStyle().copyWith( fontSize: 12.8, fontWeight: FontWeight.w500, color: Colors.white ),
+    labelMedium: const TextStyle().copyWith( fontSize: 12.8, fontWeight: FontWeight.w500, color: Colors.white ),
   );
 
   /// fontSize text 24 / colour white / font weight bold

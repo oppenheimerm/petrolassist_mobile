@@ -38,6 +38,8 @@ class _RegisterViewState extends State<RegisterView> {
   final FocusNode _acceptTermsFocusNode = FocusNode();
 
   late bool _acceptTerms = false;
+  bool formIsValid = false;
+  String _errorMessage = "";
 
   //  By properly disposing of resources and unregistering event listeners, you
   //  ensure that your app is efficient and responsive, even as widgets are created
@@ -66,6 +68,58 @@ class _RegisterViewState extends State<RegisterView> {
     return valid;
   }
 
+
+
+
+  /*bool _validatePassword(String password){
+    RegExp validatePassword = RegExp(r'^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{5,}$');
+    var valid = validatePassword.hasMatch(password);
+    return valid;
+  }*/
+
+  bool _validatePassword(String password) {
+    // Reset error message
+
+
+    // Password length greater than 6
+    if (password.length <6) {
+      _errorMessage += 'Password must be longer than 6 characters.\n';
+      formIsValid = false;
+    }
+
+    // Contains at least one uppercase letter
+    else if (!password.contains(RegExp(r'[A-Z]'))) {
+      _errorMessage += '• Uppercase letter is missing.\n';
+      formIsValid = false;
+    }
+
+    // Contains at least one lowercase letter
+    else if (!password.contains(RegExp(r'[a-z]'))) {
+      _errorMessage += '• Lowercase letter is missing.\n';
+      formIsValid = false;
+    }
+
+    // Contains at least one digit
+    else if (!password.contains(RegExp(r'[0-9]'))) {
+      _errorMessage += '• Digit is missing.\n';
+      formIsValid = false;
+    }
+
+    // Contains at least one special character
+    else if (!password.contains(RegExp(r'[!@#%^&*(),.?":{}|<>]'))) {
+      _errorMessage += '• One non alpha numeric character is missing.\n';
+      formIsValid = false;
+    }
+
+    else{
+      _errorMessage = "";
+      formIsValid = true;
+    }
+
+    return formIsValid;
+
+  }
+
   void textFieldValidate() async {
     if (_emailController.text.isEmpty ) {
       Utils.snackBar("Email can't be empty!", context);
@@ -76,9 +130,12 @@ class _RegisterViewState extends State<RegisterView> {
       Utils.snackBar("Password can't be empty!", context);
     } else if (_acceptTerms == false) {
       Utils.snackBar("You must agree to terms in order to register.", context);
-    }else if (_passwordController.text.length < 6) {
+    }else if (_passwordController.text.length < AppConsts.minimumPasswordLength) {
       Utils.snackBar("Password must be a minimum of 6 characters.", context);
-    }else if (_passwordController.text.toString() !=
+    }else if(_validatePassword(_passwordController.text) == false){
+      Utils.snackBar(_errorMessage, context);
+    }
+    else if (_passwordController.text.toString() !=
         _confirmPasswordController.text.toString()) {
       Utils.snackBar("Password and confirm password must match.", context);
     }else if(_mobileController.text.isEmpty){
@@ -86,34 +143,37 @@ class _RegisterViewState extends State<RegisterView> {
     }else if(_validateMobileUK(_mobileController.text) == false){
       Utils.snackBar("Please enter a valid UK phone number.", context);
     } else {
-      final authViewModel =
-      Provider.of<AuthViewModel>(context, listen: false);
-      final authenticateUserStatus = await authViewModel.authenticateUser(
+      final authViewModel = Provider.of<AuthViewModel>(context, listen: false);
+      final authenticateUserStatus = await authViewModel.registerUser(
+        _firstNameController.text.trim().toString(),
+          _lastNameController.text.trim().toString(),
           _emailController.text.trim().toString(),
-          _passwordController.text.trim().toString()
+          _passwordController.text.trim().toString(),
+        _confirmPasswordController.text.trim().toString(),
+        _acceptTerms,
+        _mobileController.text.trim().toString(),
       ).then((status) {
         if(context.mounted){
-          if(status != null)
+          if(status.success)
           {
-            if(status.success)
-            {
-              // Navigate to the home screen using the named route.
-              Navigator.pushNamed(context, AppConsts.rootHome);
-            }else{
-              var errMsg = status.errorMessage ?? "Could not log in";
-              debugPrint(errMsg);
-              Utils.snackBar(errMsg, context);
-            }
+            // Navigate to the home screen using the named route.
+            Navigator.pushNamed(context, AppConsts.verifyEmail);
           }else{
-            //  Let user know
-            // Error is logged further up the chain as either a
-            //  network error or auth
-            Utils.snackBar("Could not login, please contact help desk.", context);
+            var errMsg = status.errorMessage ?? "Could not log in";
+            debugPrint(errMsg);
+            Utils.snackBar(errMsg, context);
           }
-        }
+                }
       });
     }
   }
+
+
+
+  //  Test version without authentication
+  /*void textFieldValidate2() async {
+    Navigator.pushNamed(context, AppConsts.verifyEmail);
+  }*/
 
 
   @override
@@ -122,7 +182,13 @@ class _RegisterViewState extends State<RegisterView> {
     final dark = Utils.isDarkMode(context);
 
     return Scaffold(
-      appBar: AppBar(),
+      appBar: AppBar(
+        leading: IconButton(
+          onPressed: (){
+            Navigator.pushNamed(context, AppConsts.rootLogin);
+          }, icon: const Icon(Icons.arrow_back_sharp),
+        ),
+      ),
     body: SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.all(PAAppStylesConstants.defaultSpace),

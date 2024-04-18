@@ -7,7 +7,7 @@ import '../service/local_storage.dart';
 
 
 class EditProfileViewModel with ChangeNotifier{
-  UserViewModel  userViewModel = UserViewModel();
+  //UserViewModel  userViewModel = UserViewModel();
 
   bool _editSettingLoading = false;
   // Getter Methods

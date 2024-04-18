@@ -31,7 +31,7 @@ class PAElevatedButtonStyles {
           backgroundColor: AppColours.paPrimaryColour,
           disabledForegroundColor: AppColours.paDisabledColour,/* DUPLICATE STYLE FOR NOW*/
           disabledBackgroundColor: AppColours.paDisabledColour,/* DUPLICATE STYLE FOR NOW*/
-          side: const BorderSide( color: AppColours.paBlackColour2),/* Border */
+          side: BorderSide( color: AppColours.paBlackColour2.withOpacity(0.2)),/* Border */
           padding: const EdgeInsets.symmetric(vertical: 20),
           textStyle: const TextStyle(fontSize: 20, color: AppColours.paWhiteColour, fontWeight: FontWeight.w600),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))
