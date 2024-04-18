@@ -8,6 +8,7 @@ import '../resources/styles_constants.dart';
 import '../resources/text_string.dart';
 import '../utilities/utils.dart';
 import '../view_models/auth_vm.dart';
+import '../view_models/verify_email_vm.dart';
 
 
 class LoginView extends StatefulWidget {
@@ -68,6 +69,8 @@ class _LoginViewState extends State<LoginView> {
     //final width = MediaQuery.of(context).size.width;
     final dark = Utils.isDarkMode(context);
 
+    final verifyEmailVM = Provider.of<VerifyEmailViewModel>(context, listen: false);
+
     //  Validate our text fields
     void textFieldValidate() async {
       if (_emailController.text.isEmpty) {
@@ -76,7 +79,7 @@ class _LoginViewState extends State<LoginView> {
         Utils.snackBar("Email must contain @", context);
       } else if (_passwordController.text.isEmpty) {
         Utils.snackBar("Password can't be empty!", context);
-      } else if (_passwordController.text.length < 6) {
+      } else if (_passwordController.text.length < AppConsts.minimumPasswordLength) {
         Utils.snackBar("Password must be more than 6 letter's", context);
       } else {
         final authViewModel =
@@ -92,7 +95,19 @@ class _LoginViewState extends State<LoginView> {
               {
                 // Navigate to the home screen using the named route.
                 Navigator.pushNamed(context, AppConsts.rootHome);
-              }else{
+              }else if(status.errorType == AppConsts.userEmailNotVerified){
+                // Navigate to please verify email address
+                Utils.snackBar(status.errorMessage!, context);
+                verifyEmailVM.setEmailAddress(_emailController.text);
+                Navigator.pushNamed(context, AppConsts.verifyEmail, arguments: <String, String>{
+                  'emailAddress': _emailController.text,
+                });
+              } else if(status.errorType == AppConsts.notFound){
+                //  Navigate to the login screen
+                // Use bang operator "!" for nullable string
+                Utils.snackBar(status.errorMessage!, context);
+              }
+              else{
                 var errMsg = status.errorMessage ?? "Could not log in";
                 debugPrint(errMsg);
                 Utils.snackBar(errMsg, context);

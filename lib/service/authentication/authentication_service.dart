@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:petrol_assist_mobile/resources/text_string.dart';
 import '../../app_constants.dart';
 import '../../models/login_model.dart';
 import '../../models/user.dart';
@@ -14,6 +15,15 @@ import '../network_service.dart';
 
 abstract class AuthenticationServiceBase {
   Future<AuthenticationRequestResponse> requestLoginAPI(String username, String password);
+  Future<AuthenticationRequestResponse> registerUser(
+      String firstname,
+      String lastname,
+      String email,
+      String password,
+      String confirmPassword,
+      bool acceptTerms,
+      String mobile
+      );
   Future<AuthenticationRequestResponse> currentUser();
   Future<AuthenticationRequestResponse> refreshTokenForUser(UserModel savedUser);
 }
@@ -25,10 +35,11 @@ class AuthenticationService implements AuthenticationServiceBase{
   @override
   Future<AuthenticationRequestResponse> requestLoginAPI(String username, String password) async{
 
+    // Initialize response
     var authResponse = AuthenticationRequestResponse(
         UserModel.getNullUser(),
         false,
-        "Could not complete operation", AppConsts.couldNotPersistUser
+        "Could not complete operation", AppConsts.operationFailed
     );
 
 
@@ -54,6 +65,7 @@ class AuthenticationService implements AuthenticationServiceBase{
     );
 
     if (response.statusCode == 200) {
+
       //  Get cookie data
       String rawCookie = response.headers['set-cookie']!;
       int index = rawCookie.indexOf(';');
@@ -72,23 +84,32 @@ class AuthenticationService implements AuthenticationServiceBase{
 
       await LocalStorageService.persistUser(user).then((value) async {
         if(value.success){
-          authResponse = AuthenticationRequestResponse(user, true, "", AppConsts.persistedUserToStorage);
+          authResponse = AuthenticationRequestResponse(user, true, "", AppConsts.operationSuccess);
         }else{
+
           debugPrint('Error: ${AppConsts.couldNotPersistUser}');
-         authResponse = AuthenticationRequestResponse(
+          authResponse = AuthenticationRequestResponse(
               UserModel.getNullUser(),
               false,
-              "Could not complete operation", AppConsts.couldNotPersistUser);
+              "Could not complete operation", AppConsts.operationFailed);
         }
       });
     }else if(response.statusCode == 404){
       //  We could not contact the server, server down or wrong url
-      debugPrint('Error: ${AppConsts.notFound}');
+      debugPrint('Error: User login not found!${AppConsts.notFound}');
       authResponse = AuthenticationRequestResponse(
           UserModel.getNullUser(),
           false,
-          "Could not contact network",
+          "Either your username or password is incorrect",
           AppConsts.notFound);
+    }else if(response.statusCode == 401  && response.body == PATextString.emailNotVerified){
+      //  Email has not be verified
+      debugPrint('Error: ${AppConsts.verifyEmail}');
+      authResponse = AuthenticationRequestResponse(
+          UserModel.getNullUser(),
+          false,
+          "Please verify your email at $username",
+          AppConsts.userEmailNotVerified);
     }
     else{
       //  response will always be null if it is a error code: i.e. status 415
@@ -106,6 +127,102 @@ class AuthenticationService implements AuthenticationServiceBase{
     return authResponse;
     
   }
+
+  @override
+  Future<AuthenticationRequestResponse> registerUser(
+      String firstName,
+      String lastName,
+      String email,
+      String password,
+      String confirmPassword,
+      bool acceptTerms,
+      String mobileNumber
+      ) async{
+
+    var authResponse = AuthenticationRequestResponse(
+        UserModel.getNullUser(),
+        false,
+        "Could not complete operation", AppConsts.couldNotRegisterUser
+    );
+
+
+    var formDataMap = <String, dynamic>{};
+    formDataMap['firstName'] = firstName;
+    formDataMap['lastName'] = lastName;
+    formDataMap['emailAddress'] = email;
+    formDataMap['password'] = password;
+    formDataMap['confirmPassword'] = confirmPassword;
+    formDataMap['acceptTerms'] = acceptTerms.toString();
+    formDataMap['mobileNumber'] = mobileNumber.toString();
+
+
+    // For some reason this works
+    //var url = AppConsts.getUrl(ApiRequestType.login).toString();
+
+    var url = AppConsts.getUrl(ApiRequestType.register).toString();
+    //var url = "http://10.0.2.2:5008/api/Account/hello/";
+    //http://10.0.2.2:5008/api/Account/register
+
+    //var loginTimeStamp = DateTime.now();
+    final response = await http.post(
+      /*
+          If you’re sure an expression with a nullable type doesn’t
+          equal null, you can use the null assertion operator (!) to
+          make Dart treat it as non-nullable.
+      */
+        Uri.parse(url),
+        body: formDataMap,
+        headers: <String, String>{
+          'Content-Type': 'application/x-www-form-urlencoded;  charset=UTF-8',
+        }
+
+    );
+
+    if (response.statusCode == 200) {
+
+      authResponse = AuthenticationRequestResponse(
+          UserModel.getNullUser(),
+          true,
+          "User registration success", AppConsts.operationSuccess);
+
+    }else if(response.statusCode == 400 ) {
+
+      var postReplyMsg = json.decode(response.body);
+
+      if(postReplyMsg['message'] == PATextString.emailAlreadyInUseError)
+      {
+        authResponse = AuthenticationRequestResponse(
+            UserModel.getNullUser(),
+            false,
+            PATextString.emailAlreadyInUseMsg,
+            AppConsts.notFound);
+      }else if(postReplyMsg['message'] == PATextString.mobileAlreadyInUseError){
+        authResponse = AuthenticationRequestResponse(
+            UserModel.getNullUser(),
+            false,
+            PATextString.mobileAlreadyInUseMsg,
+            AppConsts.notFound);
+      }
+
+
+    }
+    else{
+      //  response will always be null if it is a error code: i.e. status 415
+      //  We really need to catch all the types of responses and create a
+      //  switch case and notify user of error.  For now just return null
+
+      debugPrint('Error: ${AppConsts.couldNotRegisterUser}');
+      authResponse = AuthenticationRequestResponse(
+          UserModel.getNullUser(),
+          false,
+          "Unable to Register",
+          AppConsts.couldNotRegisterUser);
+    }
+
+    return authResponse;
+
+  }
+
 
   @override
   Future<AuthenticationRequestResponse> currentUser() async {
@@ -221,6 +338,14 @@ class AuthenticationService implements AuthenticationServiceBase{
             }
           });
         }
+        else if(response.statusCode == 404){
+          authenticationRequestResponse = AuthenticationRequestResponse(
+              UserModel.getNullUser(),
+              false,
+              PATextString.accountNotFound,
+              AppConsts.refreshTokensForUserFail
+          );
+        }
         else if (response.statusCode == 500) {
           //  Internal server error
 
@@ -264,9 +389,9 @@ class AuthenticationService implements AuthenticationServiceBase{
         authenticationRequestResponse = AuthenticationRequestResponse(UserModel.getNullUser(),
             false,
             "Please check network",
-            AppConsts.notNetworkService
+            AppConsts.noNetworkService
         );
-        debugPrint('Could not detect network while attempting to login: ${AppConsts.notNetworkService}');
+        debugPrint('Could not detect network while attempting to login: ${AppConsts.noNetworkService}');
         return authenticationRequestResponse;
       }
     });

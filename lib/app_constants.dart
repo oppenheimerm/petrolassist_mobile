@@ -7,7 +7,8 @@ enum AuthStatus {
 enum ApiRequestType{
   login,
   register,
-  refreshToken
+  refreshToken,
+  resendVerificationToken
 }
 
 AuthStatus getStatus(String authStatus)
@@ -79,19 +80,21 @@ AuthStatus authStatusFromString(String string){
 
 class AppConsts{
 
+  static const int minimumPasswordLength = 6;
+  static const String baseImageUrl = "assets/images";
   // Logo routs
-  static const String appLogoDarkMode =  "assets/images/logos/logo-light.png";
-  static const String appLogoLightMode = "assets/images/logos/logo-dark.png";
+  static const String appLogoDarkMode =  "$baseImageUrl/logos/logo-light.png";
+  static const String appLogoLightMode = "$baseImageUrl/logos/logo-dark.png";
 
   //  Routes
   static const String rootSplash = "/splash";
   static const String rootLogin = "/login";
   static const String rootHome = "/home";
   static const String rootRegister = "/register";
-
+  static const String verifyEmail = "/verifyEmail";
   //static const String baseUrl = "https://psusersapi.azurewebsites.net";
   //static const String baseUrl = "http://192.168.1.152:8000";
-  static const String baseUrl = "http://10.0.2.2: 7147";
+  static const String baseUrl = "http://10.0.2.2:5008";
   static const String memberFolderPostfix = "/usersimages";
 
 //  Keys
@@ -117,6 +120,7 @@ class AppConsts{
 
   //  const message types
   //    3000 range Errors
+  static const int operationFailed = 3009;
   static const int noSavedUserInstance = 3000;
   static const int couldNotAuthenticateUser = 3001;
   static const int refreshTokensForUserFail = 3002;
@@ -124,14 +128,22 @@ class AppConsts{
   static const int couldNotDeleteStoredUser = 3004;
   static const int couldNotPersistUser = 3005;
   static const int couldNotPersistKeyValue = 3006;
+  static const int couldNotRegisterUser = 3007;
+  static const int userEmailNotVerified = 3008;
 
 
   //  const network Errors
   static const int unauthorized = 401;
   static const int notFound = 404;
+
   //  503 Service Unavailable
   static const int internalServerError = 500;
-  static const int notNetworkService = 503;
+  static const int noNetworkService = 503;
+
+  //  Images
+  static const verifyEmailImage = "$baseImageUrl/confirm-email.png";
+
+
 
   static String? getUrl(ApiRequestType request){
     var requestType = request.name;
@@ -140,10 +152,17 @@ class AppConsts{
         return "$baseUrl/api/Account/authenticate";
       case 'refreshToken':
         return "$baseUrl/api/Account/refresh-token";
+      case 'resendVerificationToken':
+        return "$baseUrl/api/Account/resend-verification-token?email=";
+      case 'register':
+        //return "$baseUrl/api/Account/sign-up";
+        return "$baseUrl/api/Account/register";
       default:
         throw const FormatException('Invalid ApiRequestType!');
     }
   }
+
+
 }
 
 

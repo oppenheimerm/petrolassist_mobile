@@ -15,7 +15,7 @@ class PAOutlineButtonStyle {
       elevation: PAAppStylesConstants.maxButtonElevation,
       foregroundColor: AppColours.paBlackColour1,
       side: const BorderSide( color: AppColours.paPrimaryColour, width: 2),/* Border */
-      textStyle: const TextStyle(fontSize: 20, color: AppColours.paBlackColour1, fontWeight: FontWeight.w600),
+      textStyle: const TextStyle(fontSize: 24, color: AppColours.paBlackColour1, fontWeight: FontWeight.w600),
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))
     ),
@@ -26,7 +26,7 @@ class PAOutlineButtonStyle {
         elevation: PAAppStylesConstants.maxButtonElevation,
         foregroundColor: AppColours.paWhiteColour,
         side: const BorderSide( color: AppColours.paPrimaryColour),/* Border */
-        textStyle: const TextStyle(fontSize: 20, color: AppColours.paBlackColour1, fontWeight: FontWeight.w600),
+        textStyle: const TextStyle(fontSize: 24, color: AppColours.paBlackColour1, fontWeight: FontWeight.w600),
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))
     ),

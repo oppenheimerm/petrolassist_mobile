@@ -4,6 +4,7 @@ import 'package:petrol_assist_mobile/resources/theme.dart';
 import 'package:petrol_assist_mobile/service/locator.dart';
 import 'package:petrol_assist_mobile/view_models/auth_vm.dart';
 import 'package:petrol_assist_mobile/view_models/user_vm.dart';
+import 'package:petrol_assist_mobile/view_models/verify_email_vm.dart';
 import 'package:provider/provider.dart';
 
 import 'app_constants.dart';
@@ -41,7 +42,8 @@ class MyApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(
           create: (context) => UserViewModel(),
-        )
+        ),
+        ChangeNotifierProvider(create: (context) => VerifyEmailViewModel()),
 
       ],
       child: MaterialApp(

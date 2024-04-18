@@ -1,4 +1,4 @@
-package petrolassist.com.example.petrol_assist_mobile
+package com.petrolassist.android.mobile
 
 import io.flutter.embedding.android.FlutterActivity
 
