@@ -52,11 +52,10 @@ static const String userNotFound = "User not found";
 
 // General Strings
   static const String accountNotFound = "Account not found.";
-  static const String noNetworkDetected = "No network detected.";
   static const String pleaseLogin = "Please login";
   static const String pleaseCreateAnAccount = "Please create a account.";
   static const String badRequest = "Bad request.";
-
+  static const String checkNetwork = "Please check your network connection";
 
 
   //  Registration / Login Errors
@@ -64,5 +63,12 @@ static const String userNotFound = "User not found";
   static const String mobileAlreadyInUseError = "MOBILE_ALREADY_IN_USE";
   static const String emailAlreadyInUseMsg = "Email already in use.";
   static const String mobileAlreadyInUseMsg = "Mobile already in use.";
+
+
+
+  static const String noNetworkDetected = "NO_NETWORK_DETECTED";
+  // Google maps
+  static const String couldNotGeoCodeLocation = "COULD_NOT_GEO_CODE";
+  static const String geoCodeSuccess = "SUCCESS";
 
 }

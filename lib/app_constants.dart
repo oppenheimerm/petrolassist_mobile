@@ -8,7 +8,8 @@ enum ApiRequestType{
   login,
   register,
   refreshToken,
-  resendVerificationToken
+  resendVerificationToken,
+  requestGeoCodeLocation
 }
 
 AuthStatus getStatus(String authStatus)
@@ -85,6 +86,8 @@ class AppConsts{
   // Logo routs
   static const String appLogoDarkMode =  "$baseImageUrl/logos/logo-light.png";
   static const String appLogoLightMode = "$baseImageUrl/logos/logo-dark.png";
+  static const String locationPinIconLight = "$baseImageUrl/icons/location-pin-light.png";
+  static const String locationPinIconDark = "$baseImageUrl/icons/location-pin-dark.png";
 
   //  Routes
   static const String rootSplash = "/splash";
@@ -132,6 +135,7 @@ class AppConsts{
   static const int userEmailNotVerified = 3008;
 
 
+
   //  const network Errors
   static const int unauthorized = 401;
   static const int notFound = 404;
@@ -157,6 +161,8 @@ class AppConsts{
       case 'register':
         //return "$baseUrl/api/Account/sign-up";
         return "$baseUrl/api/Account/register";
+      case 'requestGeoCodeLocation':
+        return "https://maps.googleapis.com/maps/api/geocode/json?latlng=";
       default:
         throw const FormatException('Invalid ApiRequestType!');
     }
