@@ -10,16 +10,14 @@ import 'package:provider/provider.dart';
 import 'app_constants.dart';
 import 'app_routs.dart';
 
-Future<void> requestMapsPermission() async{
+Future<void> requestMapsPermission() async {
   await Permission.locationWhenInUse.isDenied.then((value) {
     // if denied vale == true
-    if(value){
+    if (value) {
       Permission.locationWhenInUse.request();
     }
   });
 }
-
-
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -44,17 +42,17 @@ class MyApp extends StatelessWidget {
           create: (context) => UserViewModel(),
         ),
         ChangeNotifierProvider(create: (context) => VerifyEmailViewModel()),
-
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
-        themeMode: ThemeMode.system, /* set theme to current system theme */
+        themeMode: ThemeMode.system,
+        /* set theme to current system theme */
         title: 'PetrolAssist',
         //  https://docs.flutter.dev/cookbook/design/fonts
         /*
           Default theme is the light theme
         */
-        theme : PATheme.lightTheme,
+        theme: PATheme.lightTheme,
         darkTheme: PATheme.darkTheme,
         initialRoute: AppConsts.rootSplash,
         onGenerateRoute: Routes.generateRoute,

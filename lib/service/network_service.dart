@@ -12,10 +12,10 @@ class PANetworkService implements PAAppNetworkService {
   Future<bool>paGetNetworkStatus() async
   {
     var connectionResult = await Connectivity().checkConnectivity();
-    if(connectionResult != ConnectivityResult.mobile && connectionResult != ConnectivityResult.wifi) {
-      return false;
-    }else {
+    if((connectionResult.contains(ConnectivityResult.mobile)) || (connectionResult.contains(ConnectivityResult.wifi))) {
       return true;
+    }else {
+      return false;
     }
   }
 }

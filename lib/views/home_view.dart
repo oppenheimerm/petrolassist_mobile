@@ -1,13 +1,17 @@
 import 'dart:async';
+import 'dart:core';
 
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:petrol_assist_mobile/view_models/user_vm.dart';
 import 'package:provider/provider.dart';
 
+import '../app_constants.dart';
 import '../helpers.dart';
 import '../resources/colours.dart';
+import '../resources/text_string.dart';
 import '../utilities/utils.dart';
 import '../view_models/home_vm.dart';
 import 'edit_profile.dart';
@@ -23,6 +27,26 @@ class HomeView extends StatefulWidget {
 
 class _HomeViewState extends State<HomeView> {
 
+  //final _globalKey = GlobalKey();
+  //bool get isMounted => _globalKey.currentState != null && _globalKey.currentState!.mounted;
+
+  //  This package contains functions to decode google encoded polyline string
+  //  which returns a list of co-ordinates indicating route between two
+  //  geographical position
+  //
+  //  Set<E> class - https://api.flutter.dev/flutter/dart-core/Set-class.html
+  Set<Polyline> polylineSet = {};
+  Set<Marker> markerSet = {};
+  Set<Circle> circleSet = {};
+
+  bool openNavigationDrawer = true;
+
+//  We'll substitute with active nearby stations
+  bool activeNearbyDriverKeysLoaded = false;
+
+
+  BitmapDescriptor? activeNearbyIcon;
+
   @override
   void initState() {
     super.initState();
@@ -32,7 +56,7 @@ class _HomeViewState extends State<HomeView> {
   final Completer<GoogleMapController> _googleMapCompleterController = Completer<GoogleMapController>();
   GoogleMapController? _mapController;
   // The current position of the user.
-  Position? _currentPositionOfUser;
+ // Position? _currentPositionOfUser;
 
   final HomeViewModel _homeViewModel = HomeViewModel(
       MapStyleTheme.silver
@@ -54,7 +78,7 @@ class _HomeViewState extends State<HomeView> {
     _userModel = await UserViewModel().getCurrentUser();
   }*/
 
-  getUserCurrentLocation() async{
+  /*getUserCurrentLocation() async{
     try{
       // Get the real current position of the user
       Position positionOfUser = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.bestForNavigation);
@@ -67,7 +91,7 @@ class _HomeViewState extends State<HomeView> {
     }catch(err){
       debugPrint(err.toString());
     }
-  }
+  }*/
 
   @override
   void dispose() {
@@ -93,15 +117,46 @@ class _HomeViewState extends State<HomeView> {
             return Stack(
               children: [
       
-                getGoogleMap(value, dark),
+                getGoogleMap( dark),
 
                 value.buildProfileTile(context, _homeViewModel.getUser!.firstName, userVM.getCarPhotoUrl()),
-                value.buildTextField(context),
-                value.buildCurrentLocationIcon(),
+                //value.buildTextField(context),
+                value.buildCurrentLocationIcon(context),
                 value.buildBottomSheets(context,  dark),
                 //https://www.youtube.com/watch?v=NgTk1oh_N5g&list=PLWNYjcx_ZHPco3yijOw-KwBQwjjcHc5Rj&index=11
+                Align(
+                  alignment: Alignment.center,
+                  child:   Image(
+                    height: 40,
+                    image: AssetImage( dark ? AppConsts.locationPinIconLight : AppConsts.locationPinIconDark),
+                  ),
+                ),
 
-
+                // SHOW / HIDE
+                Visibility(
+                  visible: value.currentLocationSet == true,
+                  child: Positioned(
+                    top: 140,
+                      right: 20,
+                      left: 20,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(color: AppColours.paBlackColour2.withOpacity(0.2)),
+                          color: AppColours.paPrimaryColour.withOpacity(0.85),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: const EdgeInsets.all(20),
+                        //Text(PATextString.loginTitle, style: Theme.of(context).textTheme.headlineSmall),
+                        child: Center(
+                          child: Text(value.addressStringFromLatLng ?? "",
+                            style: const TextStyle(
+                                fontSize: 16, color: AppColours.blackColour1, fontWeight: FontWeight.w600
+                            ),
+                            overflow: TextOverflow.visible, softWrap: true,),
+                        ),
+                      ),
+                  ),
+                ),
               ],
             );
           }),
@@ -135,7 +190,34 @@ class _HomeViewState extends State<HomeView> {
     );
   }*/
 
-  getGoogleMap(HomeViewModel homeVm, bool dark){
+  getUserCurrentLocation() async {
+    try {
+      // Get the real current position of the user
+      Position positionOfUser = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.bestForNavigation
+      );
+      _homeViewModel.setCurrentPosition(positionOfUser);
+
+      _homeViewModel.locationOrigin = LatLng(
+         _homeViewModel.currentPosition!.latitude, _homeViewModel.currentPosition!.longitude
+      );
+
+
+      // Set the location and animate the camera on google maps to the users current position
+      CameraPosition cameraPosition =
+      CameraPosition(target: _homeViewModel.locationOrigin!, zoom: 15);
+      _mapController!.animateCamera(CameraUpdate.newCameraPosition(cameraPosition));
+
+
+      //print("This is our address: $humanReadableAddress");
+    } catch (err) {
+      debugPrint(err.toString());
+      if (!context.mounted) return;
+      Utils.snackBar(PATextString.checkNetwork, context);
+    }
+  }
+
+  getGoogleMap(bool dark) {
     return  Positioned(
       top: 120,
       left: 0,
@@ -148,20 +230,37 @@ class _HomeViewState extends State<HomeView> {
           zoomControlsEnabled: false,
           // for testing on emulator we'll use our keyGarden var
           initialCameraPosition: _keyGardens,
+          polylines: polylineSet,
+          markers: markerSet,
+          circles: circleSet,
           onMapCreated: (GoogleMapController googleMapController) async {
             _mapController = googleMapController;
-
-
-            //  Not updating
-            //_homeViewModel.updateMapTheme(googleMapController);
-            //color: dark ? AppColours.paWhiteColour : AppColours.blackColour1.withOpacity(0.85),
-            //_homeViewModel.mapStyle = MapStyleTheme.silver;
             await _homeViewModel.updateMapTheme(googleMapController, dark);
-            //_homeViewModel.mapStyleTheme = dark ? _homeViewModel.mapStyleTheme.silver : _homeViewModel.mapStyleTheme.
             _googleMapCompleterController.complete(_mapController);
+            //locateUserPosition
             getUserCurrentLocation();
-          }
-      )
+          },
+
+          // TODO
+        // Causes endless loop
+          onCameraMove: (CameraPosition? position){
+            if( _homeViewModel.locationOrigin != position?.target){
+              // set it to this new target
+
+              // TODO
+              // reset location
+             _homeViewModel.locationOrigin = position?.target;
+             _homeViewModel.currentLocationSet = false;
+            };
+          },
+
+        // TODO
+        onCameraIdle: () async {
+            // here we get address from lat/long
+          await _homeViewModel.getHumanReadableAddressFromLatLng();
+        },
+      ),
+
     );
   }
 }
