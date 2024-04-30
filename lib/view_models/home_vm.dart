@@ -6,7 +6,6 @@ import 'package:petrol_assist_mobile/service/network_get_request.dart';
 import '../app_constants.dart';
 import '../helpers.dart';
 import '../models/user.dart';
-import '../request_response/directions.dart';
 import '../resources/colours.dart';
 import '../resources/styles_constants.dart';
 import '../resources/text_string.dart';
@@ -31,6 +30,7 @@ class HomeViewModel with ChangeNotifier {
 //  pickUpLocation
   LatLng? _locationOrigin;
   String? _addressStringFromLatLng;
+  String? _addressStringToLatLng;
 
 
   UserModel? get getUser => LocalStorageService.getUserFromDisk();
@@ -39,6 +39,7 @@ class HomeViewModel with ChangeNotifier {
   Position? get currentPosition => _userPosition;
   LatLng? get locationOrigin { return _locationOrigin; }
   String? get addressStringFromLatLng { return _addressStringFromLatLng; }
+  String? get addressStringToLatLng { return _addressStringToLatLng; }
 
 
   MapStyleTheme get mapStyle => _mapStyleTheme;
@@ -55,6 +56,11 @@ class HomeViewModel with ChangeNotifier {
 
   set addressStringFromLatLng(String? addressString){
     _addressStringFromLatLng = addressStringFromLatLng;
+    notifyListeners();
+  }
+
+  set addressStringToLatLng(String? addressString){
+    _addressStringToLatLng = addressString;
     notifyListeners();
   }
 
@@ -84,6 +90,13 @@ class HomeViewModel with ChangeNotifier {
     return null;
   }
 
+  void _setGoogleMapStyle(
+      String googleMapStyle, GoogleMapController controller) {
+    // TODO setMapStyle deprecated
+    controller .setMapStyle(googleMapStyle);
+    notifyListeners();
+  }
+
   Future updateMapTheme(GoogleMapController controller, bool isDarkMode) async {
     try {
       //color: dark ? AppColours.paWhiteColour : AppColours.blackColour1.withOpacity(0.85),
@@ -91,7 +104,6 @@ class HomeViewModel with ChangeNotifier {
       await Helpers.getThemeFile(style).then((value) {
         if (value != null) {
           _setGoogleMapStyle(value, controller);
-          notifyListeners();
         }
       });
     } catch (err) {
@@ -224,12 +236,6 @@ class HomeViewModel with ChangeNotifier {
     return reply;
   }
 
-  void _setGoogleMapStyle(
-      String googleMapStyle, GoogleMapController controller) {
-    // TODO setMapStyle deprecated
-    controller.setMapStyle(googleMapStyle);
-    notifyListeners();
-  }
 
   void setLoadingState(bool state) {
     _loadingMap = state;
