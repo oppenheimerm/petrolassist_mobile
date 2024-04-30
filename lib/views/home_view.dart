@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:core';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/painting.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
@@ -11,6 +13,7 @@ import 'package:provider/provider.dart';
 import '../app_constants.dart';
 import '../helpers.dart';
 import '../resources/colours.dart';
+import '../resources/styles_constants.dart';
 import '../resources/text_string.dart';
 import '../utilities/utils.dart';
 import '../view_models/home_vm.dart';
@@ -133,30 +136,105 @@ class _HomeViewState extends State<HomeView> {
                 ),
 
                 // SHOW / HIDE
-                Visibility(
-                  visible: value.currentLocationSet == true,
-                  child: Positioned(
-                    top: 140,
-                      right: 20,
-                      left: 20,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          border: Border.all(color: AppColours.paBlackColour2.withOpacity(0.2)),
-                          color: AppColours.paPrimaryColour.withOpacity(0.85),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        padding: const EdgeInsets.all(20),
-                        //Text(PATextString.loginTitle, style: Theme.of(context).textTheme.headlineSmall),
-                        child: Center(
-                          child: Text(value.addressStringFromLatLng ?? "",
-                            style: const TextStyle(
-                                fontSize: 16, color: AppColours.blackColour1, fontWeight: FontWeight.w600
+                // WORKS 29/04/2024
+                //currentLatLongLocation(value),
+                 // UI for searching location
+                Positioned(
+                    top: 120,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: AppColours.paPrimaryColourActive.withOpacity(0.85),
+                              borderRadius: BorderRadius.circular(8.0),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: dark
+                                      ? AppColours.paWhiteColour.withOpacity(0.48)
+                                      : AppColours.blackColour1.withOpacity(0.45),
+                                  spreadRadius: 4,
+                                  blurRadius: 10,
+                                ),
+                              ],
                             ),
-                            overflow: TextOverflow.visible, softWrap: true,),
-                        ),
+                            child: Column(
+                              children: [
+                                Container(
+                                  decoration: BoxDecoration(
+                                    color: AppColours.blackColour1,
+                                    borderRadius: BorderRadius.circular(8.0),
+                                  ),
+                                  child: Column(
+                                    children: [
+                                      Padding(
+                                        padding: const EdgeInsets.only(top:8.0, bottom: 8.0, left: 8.0),
+                                        child: Row(
+                                          children: [
+                                            const Icon(Icons.location_on_sharp, color: AppColours.paWhiteColour,),
+                                            const SizedBox(width: PAAppStylesConstants.sm,),
+                                            Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(PATextString.from, style: Theme.of(context).textTheme.headlineMedium),
+                                                //Text(("${value.addressStringToLatLng != null ? value.addressStringToLatLng?.substring(0, 28) : "Click for stations" }  "), style: Theme.of(context).textTheme.headlineSmall),
+                                                Text(("${value.addressStringFromLatLng != null ? value.addressStringFromLatLng?.substring(0, 28) : PATextString.acquiringLocation }  "), style: Theme.of(context).textTheme.headlineSmall),
+                                                //Text(("${value.addressStringFromLatLng?.substring(0, 28)}..." ?? ""), style: Theme.of(context).textTheme.headlineSmall),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(height: PAAppStylesConstants.spaceBetweenItems,),
+
+                                      Divider(
+                                        height: 1,
+                                        thickness: 2,
+                                        color: AppColours.paPrimaryColourActive.withOpacity(0.85),
+                                      ),
+
+                                      const SizedBox(height: PAAppStylesConstants.spaceBetweenItems),
+
+                                      Padding(
+                                        padding: const EdgeInsets.only(bottom: 12.0, left: 8.0),
+                                        child: GestureDetector(
+                                          onTap: (){},
+                                          child: Row(
+                                            children: [
+                                              const Icon(Icons.location_on_sharp, color: AppColours.paWhiteColour,),
+                                              const SizedBox(width: PAAppStylesConstants.sm,),
+                                              Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(PATextString.from, style: Theme.of(context).textTheme.headlineMedium),
+                                                  //Text(("${value.addressStringFromLatLng?.substring(0, 28)}..." ?? ""), style: Theme.of(context).textTheme.headlineSmall),
+                                                  Text(("${value.addressStringToLatLng != null ? value.addressStringToLatLng?.substring(0, 28) : PATextString.clickForStations }  "), style: Theme.of(context).textTheme.headlineSmall),
+                                                ],
+
+
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+
+                                    ],
+                                  ),
+                                )
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
-                  ),
+                    ),
                 ),
+
               ],
             );
           }),
@@ -261,6 +339,33 @@ class _HomeViewState extends State<HomeView> {
         },
       ),
 
+    );
+  }
+
+  Visibility currentLatLongLocation(HomeViewModel vm){
+    return Visibility(
+      visible: vm.currentLocationSet == true,
+      child: Positioned(
+        top: 140,
+        right: 20,
+        left: 20,
+        child: Container(
+          decoration: BoxDecoration(
+            border: Border.all(color: AppColours.paBlackColour2.withOpacity(0.2)),
+            color: AppColours.paPrimaryColour.withOpacity(0.85),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          padding: const EdgeInsets.all(20),
+          //Text(PATextString.loginTitle, style: Theme.of(context).textTheme.headlineSmall),
+          child: Center(
+            child: Text(vm.addressStringFromLatLng ?? "",
+              style: const TextStyle(
+                  fontSize: 16, color: AppColours.blackColour1, fontWeight: FontWeight.w600
+              ),
+              overflow: TextOverflow.visible, softWrap: true,),
+          ),
+        ),
+      ),
     );
   }
 }

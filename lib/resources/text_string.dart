@@ -12,6 +12,9 @@ static const String signupSubtitle = "Your account is moments away...";
 // Home screens
 static const String nearestPetrol = "Find a petrol station";
 static const String search = "Get Stations";
+static const String from = "From";
+static const String acquiringLocation = "Acquiring location...";
+static const String clickForStations = "Click for stations";
 
 //  Forms
 //  - login
