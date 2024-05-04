@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:petrol_assist_mobile/views/home_view.dart';
+import 'package:petrol_assist_mobile/views/login_view.dart';
 
 
 import '../app_constants.dart';
@@ -21,12 +23,20 @@ class UserViewModel with ChangeNotifier {
       // check here
       if(value.success)
         {
-          await Navigator.pushReplacementNamed(context, AppConsts.rootHome);
+          //await Navigator.pushReplacementNamed(context, AppConsts.rootHome);
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const HomeView()),
+          );
         }
       else{
         var errorMessage = (value.errorMessage != null) ? value.errorMessage : "Please login.";
         Utils.snackBar(errorMessage!, context);
-        await Navigator.pushReplacementNamed(context, AppConsts.rootLogin);
+        //await Navigator.pushReplacementNamed(context, AppConsts.rootLogin);
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const LoginView()),
+        );
       }
     }).onError((error, stackTrace) => throw Exception(error.toString()));
   }

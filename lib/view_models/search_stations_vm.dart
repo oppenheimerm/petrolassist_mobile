@@ -1,0 +1,95 @@
+import 'dart:convert';
+
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:petrol_assist_mobile/resources/text_string.dart';
+import 'package:petrol_assist_mobile/service/operation_status.dart';
+
+import '../app_constants.dart';
+import '../models/station.dart';
+import '../models/user.dart';
+import '../request_response/authentication_request_response.dart';
+import '../service/authentication/authentication_service.dart';
+import '../service/local_storage.dart';
+import '../service/network_get_request.dart';
+import '../service/network_service.dart';
+
+
+class SearchStationViewModel with ChangeNotifier {
+
+  final AuthenticationService _authenticationService = AuthenticationService();
+  final NetworkGetRequests _networkGetRequests = NetworkGetRequests();
+  final PANetworkService _networkService = PANetworkService();
+
+  UserModel? get getUser => LocalStorageService.getUserFromDisk();
+
+  bool _searchStationsLoading = true;
+  List<StationModel>? _stations;
+
+  // Getter Methods
+  bool get searchStationsLoading => _searchStationsLoading;
+
+  // Setter Methods
+  void setSearchStationsLoading(bool newBool) {
+    _searchStationsLoading = newBool;
+    notifyListeners();
+  }
+
+  List<StationModel>? getStations(){
+    return _stations;
+  }
+
+
+  Future<OperationStatus?> getNearestStations(double lat, double longt,
+      int countryId, intDistanceUnit) async {
+    OperationStatus? status;
+
+    // Check network
+    await _networkService.paGetNetworkStatus().then((value) async {
+      if (value) {
+        // Good to Go
+
+        var url =
+            "${AppConsts.getUrl(ApiRequestType
+            .requestStationsData)}?fromLat=$lat&fromLongt=$longt&countryId=$countryId&units=$intDistanceUnit";
+
+        final response = await http.get(
+          Uri.parse(url),
+        );
+
+        if (response.statusCode == 200) {
+          String responseData = response.body;
+
+          try{
+            //https://docs.flutter.dev/cookbook/networking/background-parsing
+            final parsed = (jsonDecode(responseData) as List).cast<
+                Map<String, dynamic>>();
+            _stations = parsed.map<StationModel>((json) => StationModel.fromJson(json)).toList();
+
+            status = OperationStatus(true, "", AppConsts.operationSuccess);
+            setSearchStationsLoading(false);
+
+          }catch(e){
+            status = OperationStatus(true, PATextString.couldNotGetStationsData, AppConsts.faildToParseData);
+          }
+          //
+        } else {
+          // If the server did not return a 200 OK response,
+          // then throw an exception.
+          status = OperationStatus(
+              false, PATextString.couldNotGetStationsData,
+              AppConsts.operationFailed);
+          return status;
+        }
+      } else {
+        status = OperationStatus(
+            false, PATextString.noNetworkDetected,
+            AppConsts.noNetworkService);
+      }
+    });
+    return status;
+  }
+
+}
+
+

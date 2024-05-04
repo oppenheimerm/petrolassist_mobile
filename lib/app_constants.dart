@@ -9,7 +9,8 @@ enum ApiRequestType{
   register,
   refreshToken,
   resendVerificationToken,
-  requestGeoCodeLocation
+  requestGeoCodeLocation,
+  requestStationsData
 }
 
 AuthStatus getStatus(String authStatus)
@@ -88,6 +89,9 @@ class AppConsts{
   static const String appLogoLightMode = "$baseImageUrl/logos/logo-dark.png";
   static const String locationPinIconLight = "$baseImageUrl/icons/location-pin-light.png";
   static const String locationPinIconDark = "$baseImageUrl/icons/location-pin-dark.png";
+  //  need to use ip address of local host in order to load
+  //  network images (locally) - CHANGE URL ON HOSTING
+  static const String stationLogoBaseurl = "$baseUrl/img/logos";
 
   //  Routes
   static const String rootSplash = "/splash";
@@ -95,6 +99,8 @@ class AppConsts{
   static const String rootHome = "/home";
   static const String rootRegister = "/register";
   static const String verifyEmail = "/verifyEmail";
+  static const String rootSearchStations = "/searchStations";
+
   //static const String baseUrl = "https://psusersapi.azurewebsites.net";
   //static const String baseUrl = "http://192.168.1.152:8000";
   static const String baseUrl = "http://10.0.2.2:5008";
@@ -133,12 +139,13 @@ class AppConsts{
   static const int couldNotPersistKeyValue = 3006;
   static const int couldNotRegisterUser = 3007;
   static const int userEmailNotVerified = 3008;
-
-
+  static const int getRequestFailed = 3009;
+  static const int faildToParseData = 3010;
 
   //  const network Errors
   static const int unauthorized = 401;
   static const int notFound = 404;
+
 
   //  503 Service Unavailable
   static const int internalServerError = 500;
@@ -163,6 +170,8 @@ class AppConsts{
         return "$baseUrl/api/Account/register";
       case 'requestGeoCodeLocation':
         return "https://maps.googleapis.com/maps/api/geocode/json?latlng=";
+      case 'requestStationsData':
+        return "$baseUrl/api/Stations/get-nearest-stations";
       default:
         throw const FormatException('Invalid ApiRequestType!');
     }
