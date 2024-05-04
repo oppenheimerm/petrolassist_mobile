@@ -16,6 +16,9 @@ static const String from = "From";
 static const String acquiringLocation = "Acquiring location...";
 static const String clickForStations = "Click for stations";
 
+// Search station screen
+  static const String nearestStationResults = "S T A T I O N S";
+
 //  Forms
 //  - login
 static const String emailAddress = "Email";
@@ -46,6 +49,8 @@ static const String resendEmail = "Resend email";
 static const String couldNotResendEmail = "Could not resend email.";
 static const String resendEmailRequestSuccess = "Email resent, please check your inbox.";
 
+static const String couldNotGetStationsData = "Could not get station data";
+
 
 
 static const String userAuthenticated = "User authenticated";
@@ -73,5 +78,6 @@ static const String userNotFound = "User not found";
   // Google maps
   static const String couldNotGeoCodeLocation = "COULD_NOT_GEO_CODE";
   static const String geoCodeSuccess = "SUCCESS";
+  static const String successString = "SUCCESS";
 
 }

@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:petrol_assist_mobile/app_constants.dart';
 import '../resources/colours.dart';
 
 class Utils {
@@ -96,6 +97,19 @@ class Utils {
 
   static bool isAndroid(){
     return Platform.isAndroid;
+  }
+
+  //  TODO not tested
+  static String getPetrolStationLogoPrefix(String logo){
+    //http://localhost:5008/img/logos/texaco_logo_100_x_100.jpg
+    var prefix = AppConsts.stationLogoBaseurl;
+    var url = "$prefix/${logo}_logo_100_x_100.jpg";
+    return url;
+  }
+  //  TODO not tested
+  static String getDistanceAwayText(double distance, int unit){
+    var reply = ( unit == 0 ) ? "${distance.toStringAsFixed(3)} km(s) away." : "${distance.toStringAsFixed(3)} mi(s) away.";
+    return reply;
   }
 
 }

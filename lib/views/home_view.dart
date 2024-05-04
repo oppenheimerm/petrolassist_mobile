@@ -1,13 +1,11 @@
 import 'dart:async';
 import 'dart:core';
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/painting.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:petrol_assist_mobile/view_models/user_vm.dart';
+import 'package:petrol_assist_mobile/views/search_stations.dart';
 import 'package:provider/provider.dart';
 
 import '../app_constants.dart';
@@ -17,7 +15,6 @@ import '../resources/styles_constants.dart';
 import '../resources/text_string.dart';
 import '../utilities/utils.dart';
 import '../view_models/home_vm.dart';
-import 'edit_profile.dart';
 
 
 
@@ -152,7 +149,7 @@ class _HomeViewState extends State<HomeView> {
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: AppColours.paPrimaryColourActive.withOpacity(0.85),
+                              color: dark ? AppColours.paPrimaryColourActive.withOpacity(0.85) : AppColours.paWhiteColour,
                               borderRadius: BorderRadius.circular(8.0),
                               boxShadow: [
                                 BoxShadow(
@@ -168,7 +165,7 @@ class _HomeViewState extends State<HomeView> {
                               children: [
                                 Container(
                                   decoration: BoxDecoration(
-                                    color: AppColours.blackColour1,
+                                    color: dark ? AppColours.blackColour1 : Colors.white.withOpacity(0.65),
                                     borderRadius: BorderRadius.circular(8.0),
                                   ),
                                   child: Column(
@@ -177,7 +174,10 @@ class _HomeViewState extends State<HomeView> {
                                         padding: const EdgeInsets.only(top:8.0, bottom: 8.0, left: 8.0),
                                         child: Row(
                                           children: [
-                                            const Icon(Icons.location_on_sharp, color: AppColours.paWhiteColour,),
+                                            Icon(
+                                              Icons.location_on_sharp,
+                                              color: dark? AppColours.paWhiteColour : AppColours.blackColour1,
+                                            ),
                                             const SizedBox(width: PAAppStylesConstants.sm,),
                                             Column(
                                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -196,7 +196,7 @@ class _HomeViewState extends State<HomeView> {
                                       Divider(
                                         height: 1,
                                         thickness: 2,
-                                        color: AppColours.paPrimaryColourActive.withOpacity(0.85),
+                                        color: dark? AppColours.paPrimaryColourActive.withOpacity(0.85) : AppColours.blackColour1.withOpacity(0.45),
                                       ),
 
                                       const SizedBox(height: PAAppStylesConstants.spaceBetweenItems),
@@ -204,10 +204,28 @@ class _HomeViewState extends State<HomeView> {
                                       Padding(
                                         padding: const EdgeInsets.only(bottom: 12.0, left: 8.0),
                                         child: GestureDetector(
-                                          onTap: (){},
+                                          // TODO check onl if we have lat / longt parms.
+                                          // Remove hardcoded countryId
+                                          onTap: (){
+                                            if(_homeViewModel.currentPosition != null){
+
+                                              Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (context) => SearchStationsView(
+                                                      latitude: _homeViewModel.currentPosition!.latitude,
+                                                      longitude: _homeViewModel.currentPosition!.longitude,
+                                                      countryId: 1,
+                                                      distanceUnit: 0
+                                                    ),
+                                              ),);
+
+                                            }
+
+                                          },
                                           child: Row(
                                             children: [
-                                              const Icon(Icons.location_on_sharp, color: AppColours.paWhiteColour,),
+                                              Icon(Icons.location_on_sharp, color: dark ? AppColours.paWhiteColour : AppColours.blackColour1,),
                                               const SizedBox(width: PAAppStylesConstants.sm,),
                                               Column(
                                                 crossAxisAlignment: CrossAxisAlignment.start,

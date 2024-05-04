@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 
 import '../app_constants.dart';
 import '../env/env.dart';
+import '../models/station.dart';
 import '../resources/text_string.dart';
 import 'network_service.dart';
 import 'operation_status.dart';
@@ -12,11 +13,13 @@ import 'operation_status.dart';
 abstract class NetworkGetRequestsBase {
   Future<OperationStatus?> resendVerificationToken(String email);
   Future<dynamic> reverseGeoCodeRequest(double latitude, double longitude);
+  Future<OperationStatus?> getNearbyStations(double lat, double longt, int countryId, intDistanceUnit);
 }
 
 class NetworkGetRequests implements NetworkGetRequestsBase {
   late final PANetworkService _networkService = PANetworkService();
 
+  //  TODO - keep in the view model
   @override
   Future<dynamic> reverseGeoCodeRequest(double latitude, double longitude) async {
     //  Do we have network connectivity?
@@ -44,6 +47,7 @@ class NetworkGetRequests implements NetworkGetRequestsBase {
     return reply;
   }
 
+  //  Remove - keep in viewmodel
   @override
   Future<OperationStatus?> resendVerificationToken(String email) async {
     OperationStatus status = OperationStatus(
@@ -74,5 +78,41 @@ class NetworkGetRequests implements NetworkGetRequestsBase {
         TODO - Account already verified
         */
     return status;
+  }
+
+//  TODO Remove
+  @override
+  Future<OperationStatus?> getNearbyStations(double lat, double longt, int countryId, intDistanceUnit) async {
+
+    dynamic reply;
+
+    //  ?fromLat=51.5237747&fromLongt=-0.065196&countryId=1&units=1
+    var url =
+        "${AppConsts.getUrl(ApiRequestType.requestStationsData)}?fromLat=$lat&fromLongt=$longt&countryId=$countryId&units=$intDistanceUnit";
+
+    final response = await http.get(
+      Uri.parse(url),
+    );
+
+
+    await http.get(
+      Uri.parse(url),
+    ).then((value) async {
+      if (value.statusCode == 200) {
+
+        String responseData = value.body;
+        //https://docs.flutter.dev/cookbook/networking/background-parsing
+        final parsed = (jsonDecode(responseData) as List).cast<Map<String, dynamic>>();
+        reply = parsed.map<StationModel>((json) => StationModel.fromJson(json)).toList();
+        return reply;
+
+      }else {
+        // If the server did not return a 200 OK response,
+        // then throw an exception.
+        reply = PATextString.couldNotGetStationsData;
+      }
+    });
+    return reply;
+
   }
 }

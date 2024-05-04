@@ -5,6 +5,7 @@ import 'package:petrol_assist_mobile/service/locator.dart';
 import 'package:petrol_assist_mobile/view_models/auth_vm.dart';
 import 'package:petrol_assist_mobile/view_models/user_vm.dart';
 import 'package:petrol_assist_mobile/view_models/verify_email_vm.dart';
+import 'package:petrol_assist_mobile/views/splash_view.dart';
 import 'package:provider/provider.dart';
 
 import 'app_constants.dart';
@@ -54,8 +55,9 @@ class MyApp extends StatelessWidget {
         */
         theme: PATheme.lightTheme,
         darkTheme: PATheme.darkTheme,
-        initialRoute: AppConsts.rootSplash,
-        onGenerateRoute: Routes.generateRoute,
+        home: const SplashView(),
+        //initialRoute: AppConsts.rootSplash,
+        //onGenerateRoute: Routes.generateRoute,
       ),
     );
   }
