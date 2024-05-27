@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:petrol_assist_mobile/views/home_view.dart';
+import 'package:petrol_assist_mobile/views/verify_emailView.dart';
 import 'package:provider/provider.dart';
 
 import '../app_constants.dart';
@@ -93,15 +95,22 @@ class _LoginViewState extends State<LoginView> {
             {
               if(status.success)
               {
-                // Navigate to the home screen using the named route.
-                Navigator.pushNamed(context, AppConsts.rootHome);
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const HomeView(),
+                  ),
+                );
+
+
               }else if(status.errorType == AppConsts.userEmailNotVerified){
                 // Navigate to please verify email address
                 Utils.snackBar(status.errorMessage!, context);
                 verifyEmailVM.setEmailAddress(_emailController.text);
-                Navigator.pushNamed(context, AppConsts.verifyEmail, arguments: <String, String>{
-                  'emailAddress': _emailController.text,
-                });
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => VerifyEmailView(emailAddress: _emailController.text),
+                  ),
+                );
               } else if(status.errorType == AppConsts.notFound){
                 //  Navigate to the login screen
                 // Use bang operator "!" for nullable string
@@ -207,7 +216,12 @@ class _LoginViewState extends State<LoginView> {
                               width: double.infinity,
                               child: OutlinedButton(
                                 onPressed: (){
-                                  Navigator.pushReplacementNamed(context, AppConsts.rootRegister);
+                                 // Navigator.pushReplacementNamed(context, AppConsts.rootRegister);
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (context) => const HomeView(),
+                                    ),
+                                  );
                                 }, child: const Text(PATextString.createAccount),
                               ),
                             ),

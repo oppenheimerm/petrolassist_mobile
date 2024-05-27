@@ -10,14 +10,24 @@ static const String loginSubtitle = "Please Login.";
 static const String signupSubtitle = "Your account is moments away...";
 
 // Home screens
-static const String nearestPetrol = "Find a petrol station";
+static const String nearestPetrol = "Find petrol assistance";
 static const String search = "Get Stations";
 static const String from = "From";
+static const String selectCurrentLocation = "Select current location";
+static const String tripDetails = "Trip Details";
 static const String acquiringLocation = "Acquiring location...";
 static const String clickForStations = "Click for stations";
+static const String dragMapToMovePin = "Drag map to move pin";
+static const String confirmLocation = "Confirm location";
+static const String whichStation = "Which station?";
+static const String confirmTrip = "C O N F I R M";
+static const String cancelTrip = "C A N C E L";
+
+
 
 // Search station screen
   static const String nearestStationResults = "S T A T I O N S";
+  static const String selectStation = "Select your station";
 
 //  Forms
 //  - login
@@ -39,6 +49,10 @@ static const String privacyPolicy = "Privacy Policy";
 static const String termsOfUse = "Terms of Use";
 static const String passwordStrengthError = "Password must have as least one uppercase letter, at lease one lowercase letter, at least one digit and at least one special character";
 static const String emailNotVerified = "EMAIL_NOT_VERIFIED";
+
+//  Station
+static const String stationDetails = "Station Details";
+static const String confirmStationSelection = "Select station";
 
 
 // Verify email view

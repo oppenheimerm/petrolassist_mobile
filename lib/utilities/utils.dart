@@ -103,13 +103,40 @@ class Utils {
   static String getPetrolStationLogoPrefix(String logo){
     //http://localhost:5008/img/logos/texaco_logo_100_x_100.jpg
     var prefix = AppConsts.stationLogoBaseurl;
-    var url = "$prefix/${logo}_logo_100_x_100.jpg";
+    var url = "$prefix/${logo}_logo_200_x_200.jpg";
     return url;
   }
+
+  //  TODO not tested
+  static String getPetrolStationCoverPhoto(String logo){
+    var prefix = AppConsts.stationLogoBaseurl;
+    var url = "$prefix/${logo}_cover.png";
+    return url;
+  }
+
   //  TODO not tested
   static String getDistanceAwayText(double distance, int unit){
     var reply = ( unit == 0 ) ? "${distance.toStringAsFixed(3)} km(s) away." : "${distance.toStringAsFixed(3)} mi(s) away.";
     return reply;
+  }
+
+
+  static String getGreeting(String name) {
+    String greeting = "";
+    DateTime now = DateTime.now();
+    int hours = now.hour;
+
+    if (hours >= 1 && hours <= 12) {
+      greeting = "Good Morning $name";
+    } else if (hours >= 12 && hours <= 16) {
+      greeting = "Good Afternoon $name";
+    } else if (hours >= 16 && hours <= 21) {
+      greeting = "Good Evening $name";
+    } else if (hours >= 21 && hours <= 24) {
+      greeting = "Good Night $name";
+    }
+
+    return greeting;
   }
 
 }

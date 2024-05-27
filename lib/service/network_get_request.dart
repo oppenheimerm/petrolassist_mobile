@@ -13,13 +13,46 @@ import 'operation_status.dart';
 abstract class NetworkGetRequestsBase {
   Future<OperationStatus?> resendVerificationToken(String email);
   Future<dynamic> reverseGeoCodeRequest(double latitude, double longitude);
-  Future<OperationStatus?> getNearbyStations(double lat, double longt, int countryId, intDistanceUnit);
+  Future<OperationStatus?> getNearbyStations(double lat, double longt, intDistanceUnit);
+  Future<dynamic> getDirections(LatLng origin, LatLng destination);
 }
 
 class NetworkGetRequests implements NetworkGetRequestsBase {
   late final PANetworkService _networkService = PANetworkService();
 
-  //  TODO - keep in the view model
+  @override
+  Future<dynamic> getDirections(LatLng? origin, LatLng? destination) async{
+    // url https://maps.googleapis.com/maps/api/directions/json
+    //   ?destination=Montreal
+    //   &origin=Toronto
+    //   &key=YOUR_API_KEY
+
+    dynamic reply;
+
+    if( origin != null && destination != null){
+      var urlPostfix = "origin=${origin.latitude},${origin.longitude}&destination=${destination.latitude},${destination.longitude}&key=${Env.googleMapsApiKey}";
+      var url = AppConsts.getUrl(ApiRequestType.requestDirections).toString() + urlPostfix;
+
+      await http.get(
+        Uri.parse(url),
+      ).then((value) async {
+        if (value.statusCode == 200) {
+          String responseData = value.body;
+          var decodeResponseData = jsonDecode(responseData);
+          reply = decodeResponseData;
+        }else {
+          // If the server did not return a 200 OK response,
+          // then throw an exception.
+          reply = AppConsts.couldNotGetDirection;
+        }
+      });
+    }else{
+      reply = AppConsts.couldNotGetDirection;
+    }
+
+    return reply;
+  }
+
   @override
   Future<dynamic> reverseGeoCodeRequest(double latitude, double longitude) async {
     //  Do we have network connectivity?
@@ -82,13 +115,13 @@ class NetworkGetRequests implements NetworkGetRequestsBase {
 
 //  TODO Remove
   @override
-  Future<OperationStatus?> getNearbyStations(double lat, double longt, int countryId, intDistanceUnit) async {
+  Future<OperationStatus?> getNearbyStations(double lat, double longt, intDistanceUnit) async {
 
     dynamic reply;
 
     //  ?fromLat=51.5237747&fromLongt=-0.065196&countryId=1&units=1
     var url =
-        "${AppConsts.getUrl(ApiRequestType.requestStationsData)}?fromLat=$lat&fromLongt=$longt&countryId=$countryId&units=$intDistanceUnit";
+        "${AppConsts.getUrl(ApiRequestType.requestStationsData)}?fromLat=$lat&fromLongt=$longt&units=$intDistanceUnit";
 
     final response = await http.get(
       Uri.parse(url),

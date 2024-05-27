@@ -1,87 +1,84 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:petrol_assist_mobile/service/network_get_request.dart';
+import 'package:petrol_assist_mobile/view_models/user_vm.dart';
+import 'package:provider/provider.dart';
 
 import '../app_constants.dart';
+import '../components/shimmer_search.dart';
 import '../helpers.dart';
+import '../models/direction_details_info.dart';
+import '../models/station.dart';
 import '../models/user.dart';
 import '../resources/colours.dart';
 import '../resources/styles_constants.dart';
 import '../resources/text_string.dart';
-import '../service/authentication/authentication_service.dart';
 import '../service/local_storage.dart';
 import '../service/network_service.dart';
+import '../service/operation_status.dart';
 import '../utilities/utils.dart';
+import '../views/station.dart';
 
 class HomeViewModel with ChangeNotifier {
-  MapStyleTheme _mapStyleTheme;
-  final AuthenticationService _authenticationService = AuthenticationService();
+
+  //final AuthenticationService _authenticationService = AuthenticationService();
   final NetworkGetRequests _networkGetRequests = NetworkGetRequests();
   final PANetworkService _networkService = PANetworkService();
 
-  //  PetrolAssist geo point
-  //PAGeoPoint? _userCurrentPAGeoPoint;
-  // Google maps detailed location information.
   Position? _userPosition;
+  //  TODO - remvove if not being used
   bool _loadingMap = true;
-  bool _currentLocationSet = false;
+  bool _searchStationsLoading = true;
+  List<StationModel>? _stations;
 
-//  pickUpLocation
-  LatLng? _locationOrigin;
   String? _addressStringFromLatLng;
   String? _addressStringToLatLng;
 
+  //  This package contains functions to decode google encoded polyline string
+  //  which returns a list of co-ordinates indicating route between two
+  //  geographical position
+  //
+  //  Set<E> class - https://api.flutter.dev/flutter/dart-core/Set-class.html
+  Set<Polyline> _polylineSet = {};
 
   UserModel? get getUser => LocalStorageService.getUserFromDisk();
-  //PAGeoPoint? get getUserCurrentLocation => _userCurrentPAGeoPoint;
-  bool get currentLocationSet  => _currentLocationSet;
   Position? get currentPosition => _userPosition;
-  LatLng? get locationOrigin { return _locationOrigin; }
+  bool get searchStationsLoading => _searchStationsLoading;
+
   String? get addressStringFromLatLng { return _addressStringFromLatLng; }
   String? get addressStringToLatLng { return _addressStringToLatLng; }
-
-
-  MapStyleTheme get mapStyle => _mapStyleTheme;
-
-  set mapStyle(MapStyleTheme mapStyle) {
-    _mapStyleTheme = mapStyle;
-    notifyListeners();
-  }
-
-  set locationOrigin(LatLng? latLng){
-    _locationOrigin = latLng;
-    notifyListeners();
-  }
+  Set<Polyline> get polylineSet { return _polylineSet; }
 
   set addressStringFromLatLng(String? addressString){
     _addressStringFromLatLng = addressStringFromLatLng;
     notifyListeners();
   }
 
+  set searchStationsLoading(bool loading){
+    _searchStationsLoading = loading;
+    notifyListeners();
+  }
   set addressStringToLatLng(String? addressString){
     _addressStringToLatLng = addressString;
     notifyListeners();
   }
 
-  set currentLocationSet(bool currentLocationSet){
-    _currentLocationSet = currentLocationSet;
+  set polylineSet(Set<Polyline> val) {
+    _polylineSet = val;
     notifyListeners();
   }
 
-
-  HomeViewModel([this._mapStyleTheme = MapStyleTheme.silver]);
-
-  /*void setCurrentLocation(PAGeoPoint paGeoPoint){
-    _userCurrentPAGeoPoint = paGeoPoint;
-    _currentLocationSet = true;
-    notifyListeners();
-  }*/
+  HomeViewModel();
 
   void setCurrentPosition(Position position){
     _userPosition = position;
     notifyListeners();
   }
+
 
   LatLng? getLatLngFromPosition(Position? position){
     if(position != null){
@@ -90,125 +87,15 @@ class HomeViewModel with ChangeNotifier {
     return null;
   }
 
-  void _setGoogleMapStyle(
-      String googleMapStyle, GoogleMapController controller) {
-    // TODO setMapStyle deprecated
-    controller .setMapStyle(googleMapStyle);
-    notifyListeners();
-  }
 
-  Future updateMapTheme(GoogleMapController controller, bool isDarkMode) async {
-    try {
-      //color: dark ? AppColours.paWhiteColour : AppColours.blackColour1.withOpacity(0.85),
-      var style = isDarkMode ? MapStyleTheme.night : MapStyleTheme.silver;
-      await Helpers.getThemeFile(style).then((value) {
-        if (value != null) {
-          _setGoogleMapStyle(value, controller);
-        }
-      });
-    } catch (err) {
-      debugPrint('Error in home_vm.dart, line: 26: ${err.toString()}');
-    }
-  }
-
-  //  TODO - Test and remve
-  /*getUserCurrentLocation(
-      bool isMounted,
-      BuildContext context,
-      Position? currentPositionOfUser,
-      GoogleMapController? mapController) async {
-    try {
-      // Get the real current position of the user
-      Position positionOfUser = await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.bestForNavigation);
-      currentPositionOfUser = positionOfUser;
-      // Convert to lat/long type
-      LatLng latLngPositionOfUser = LatLng(
-          currentPositionOfUser!.latitude, currentPositionOfUser!.longitude);
-      // Set the location and animate the camera on google maps to the users current position
-      CameraPosition cameraPosition =
-          CameraPosition(target: latLngPositionOfUser, zoom: 15);
-      mapController!
-          .animateCamera(CameraUpdate.newCameraPosition(cameraPosition));
-      String humanReadableAddress = "";
-
-      //https://stackoverflow.com/questions/72505027/do-not-use-buildcontexts-across-async-gaps-after-update-pub-yaml-to-the-major-v
-      //https://stackoverflow.com/questions/72667782/undefined-name-mounted
-      String addressRequestReply =
-          await searchAddressForGeographicCoordinates(currentPositionOfUser);
-      if (addressRequestReply == PATextString.noNetworkDetected) {
-        if (!isMounted) return;
-        Utils.snackBar(PATextString.checkNetwork, context);
-      } else if (addressRequestReply == PATextString.couldNotGeoCodeLocation) {
-        if (!isMounted) return;
-        Utils.snackBar(PATextString.checkNetwork, context);
-      } else {
-        // Should be an array here
-        humanReadableAddress = addressRequestReply;
-        //humanReadableAddress = addressRequestReply["results"][0]["formatted-address"];
-      }
-
-      //print("This is our address: $humanReadableAddress");
-    } catch (err) {
-      debugPrint(err.toString());
-    }
-  }*/
-
-  /*resetPosition(double latitude, double longitude){
-    _currentLocationSet = false;
-    _userCurrentPAGeoPoint?.locationLatitude = latitude;
-    _userCurrentPAGeoPoint?.locationLongitude = latitude;
-    notifyListeners();
-  }*/
-
-  /*Future<String?> updateAddressGeographicCoordinates() async{
-    String? reply;
-    await _networkService.paGetNetworkStatus().then((value) async {
-
-      if (value) {
-        if(_userCurrentPAGeoPoint?.locationLatitude != null && _userCurrentPAGeoPoint?.locationLongitude != null){
-          await _networkGetRequests.reverseGeoCodeRequest(
-              _userCurrentPAGeoPoint!.locationLatitude!, _userCurrentPAGeoPoint!.locationLongitude!).then((value) async {
-
-            if(value == PATextString.noNetworkDetected) {
-              reply = PATextString.noNetworkDetected;
-            }else if( value == PATextString.couldNotGeoCodeLocation){
-              reply = PATextString.couldNotGeoCodeLocation;
-            }else{
-              if(value != null){
-                // Should be an array here
-                String humanReadableRequest = "";
-                humanReadableRequest = value["results"][0]["formatted_address"];
-;
-                // TODO - Should do an addition check for null location name
-                _userCurrentPAGeoPoint?.locationName = humanReadableRequest;
-                _currentLocationSet = true;
-                reply = PATextString.geoCodeSuccess;
-                notifyListeners();
-              }
-
-            }
-          });
-        }else{
-          reply = "ERROR";
-        }
-
-      }else {
-        // Could not connect to network
-        reply = PATextString.noNetworkDetected;
-      }
-    });
-    return reply;
-  }*/
-
-  Future<String?> getHumanReadableAddressFromLatLng() async {
+  Future<String?> getHumanReadableAddressFromLatLng(UserViewModel userViewModel) async {
     //String apiUrl = "https://maps.googleapis.com/maps/api/geocode/json?latlng=${position.latitude},${position.longitude}}=${Env.googleMapsApiKey}";
     //String? humanReadableAddress = "";
     String? reply;
     await _networkService.paGetNetworkStatus().then((value) async {
 
       if (value) {
-        await _networkGetRequests.reverseGeoCodeRequest(_locationOrigin!.latitude, _locationOrigin!.longitude).then((value) async {
+        await _networkGetRequests.reverseGeoCodeRequest( userViewModel.locationOrigin!.latitude, userViewModel.locationOrigin!.longitude).then((value) async {
 
           if(value == PATextString.noNetworkDetected) {
             reply = PATextString.noNetworkDetected;
@@ -220,8 +107,9 @@ class HomeViewModel with ChangeNotifier {
               String humanReadableRequest = "";
               humanReadableRequest = value["results"][0]["formatted_address"];
               _addressStringFromLatLng = humanReadableRequest;
-              _currentLocationSet = true;
               reply = humanReadableRequest;
+              userViewModel.hasStartAddress = true;
+              userViewModel.addressStringOrigin = humanReadableRequest;
               notifyListeners();
             }
 
@@ -236,6 +124,197 @@ class HomeViewModel with ChangeNotifier {
     return reply;
   }
 
+  Future<OperationStatus> getOriginToDestinationDetails(UserViewModel userViewModel) async {
+
+    OperationStatus status = OperationStatus(
+        false, AppConsts.noNetworkDetected, AppConsts.operationFailed);
+
+    await _networkService.paGetNetworkStatus().then((value) async {
+
+      if (value) {
+        await _networkGetRequests.getDirections( userViewModel.locationOrigin, userViewModel.locationStation).then((value) async {
+
+          if(value == AppConsts.couldNotGetDirection) {
+            status = OperationStatus(false, "Unable to get station directions", AppConsts.operationFailed);
+          }else{
+            if(value != null){
+              DirectionDetailsInfo directionDetailsInfo = DirectionDetailsInfo();
+              directionDetailsInfo.ePoints = value["routes"][0]["overview_polyline"]["points"];
+
+              directionDetailsInfo.distanceText = value["routes"][0]["legs"][0]["distance"]["text"];
+              directionDetailsInfo.distanceValue = value["routes"][0]["legs"][0]["distance"]["value"];
+
+              directionDetailsInfo.durationText = value["routes"][0]["legs"][0]["duration"]["text"];
+              directionDetailsInfo.durationValue = value["routes"][0]["legs"][0]["duration"]["value"];
+
+              userViewModel.hasDirectionDetailsInfo = true;
+              userViewModel.directionDetailsInfo = directionDetailsInfo;
+              notifyListeners();
+              status = OperationStatus(true, "", AppConsts.operationSuccess);
+            }
+
+          }
+        });
+
+      }else {
+        // Could not connect to network
+        status = OperationStatus(false, AppConsts.noNetworkDetected, AppConsts.operationFailed);
+      }
+    });
+    return status;
+  }
+
+  void cancelTrip( BuildContext context, UserViewModel vm, HomeViewModel homeVM){
+    //  RESET
+    //  UserView model
+    vm.locationOrigin = null;
+    vm.locationStation = null;
+    vm.addressStringOrigin = null;
+    vm.addressStation = null;
+    vm.startAddressConfirmed = false;
+    vm.hasStartAddress = false;
+    vm.stationAddressConfirmed = false;
+    vm.hasDirectionDetailsInfo = false;
+    vm.directionDetailsInfo = null;
+    vm.boundLatLng = null;
+    vm.markerSet.clear();
+    vm.circleSet.clear();
+
+    // HomeViewModel
+    addressStringFromLatLng = null;
+    _stations = null;
+    addressStringFromLatLng = null;
+    addressStringToLatLng = null;
+    addressStringFromLatLng = null;
+    polylineSet.clear();
+
+  }
+
+
+  Future<OperationStatus>drawPolyLinesForTrip( UserViewModel userVM, List<LatLng> pLineCoordinateList,
+      Set<Polyline> polylineSet, Completer<GoogleMapController> mapController, bool dark) async{
+
+    // in the homeView display loading dialog, while we process this work
+    OperationStatus status = OperationStatus(false, AppConsts.couldNotCompleteOperation, AppConsts.operationFailed);
+
+    await getOriginToDestinationDetails(userVM).then((value) async{
+      if(value.success){
+
+        // get value from userVM
+        PolylinePoints polylinePoints = PolylinePoints();
+
+
+        if(userVM.directionDetailsInfo != null){
+          if(userVM.directionDetailsInfo!.ePoints != null){
+            // Got to figure out a better way to deal with nullability.
+            List<PointLatLng> decodePolylinePointsResultList =
+              polylinePoints.decodePolyline(userVM.directionDetailsInfo!.ePoints!);
+
+            pLineCoordinateList.clear();
+            for (var pointLatLng in decodePolylinePointsResultList) {
+              pLineCoordinateList.add(LatLng(pointLatLng.latitude, pointLatLng.longitude));
+            }
+
+            polylineSet.clear();
+
+            Polyline polyline = Polyline(
+                color: dark? Colors.amberAccent : Colors.blue,
+                polylineId: const PolylineId("PolylineId"),
+                jointType: JointType.round,
+                points: pLineCoordinateList,
+                startCap: Cap.roundCap,
+                endCap: Cap.roundCap,
+                geodesic: true,
+                width: 5
+            );
+
+            userVM.polyline = polyline;
+            polylineSet.add(polyline);
+
+            LatLngBounds boundLatLng;
+            if(userVM.locationOrigin!.latitude > userVM.locationStation!.latitude &&
+            userVM.locationOrigin!.longitude > userVM.locationStation!.longitude){
+              boundLatLng = LatLngBounds(southwest: userVM.locationStation!, northeast: userVM.locationOrigin!);
+            }else if(userVM.locationOrigin!.longitude > userVM.locationStation!.longitude){
+              boundLatLng = LatLngBounds(
+                  southwest: LatLng(userVM.locationOrigin!.latitude, userVM.locationStation!.longitude),
+                  northeast: LatLng(userVM.locationStation!.latitude, userVM.locationOrigin!.longitude )
+              );
+            }
+            else if(userVM.locationOrigin!.latitude > userVM.locationStation!.latitude ){
+              boundLatLng = LatLngBounds(
+                  southwest: LatLng(userVM.locationStation!.latitude, userVM.locationOrigin!.longitude),
+                  northeast: LatLng(userVM.locationOrigin!.latitude,  userVM.locationStation!.longitude)
+              );
+            }
+            else{
+              boundLatLng = LatLngBounds(southwest: userVM.locationOrigin!, northeast: userVM.locationStation!);
+            }
+
+
+            userVM.boundLatLng = boundLatLng;
+            // reset map bounds
+            await resetMapBounds(boundLatLng, mapController);
+
+            Marker originMarker = Marker(
+              markerId: const MarkerId("originID"),
+              infoWindow: InfoWindow(title: userVM.addressStringOrigin, snippet: "Start location"),
+              position: userVM.locationOrigin!,
+              icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen)
+            );
+
+            Marker destinationMarker = Marker(
+                markerId: const MarkerId("destinationID"),
+                infoWindow: InfoWindow(title: userVM.addressStation, snippet: "Petrol station"),
+                position: userVM.locationStation!,
+                icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed)
+            );
+
+            userVM.markerSet.add(originMarker);
+            userVM.markerSet.add(destinationMarker);
+
+            Circle originCircle = Circle(
+              circleId: const CircleId("originId"),
+              fillColor: dark ? AppColours.paWhiteColour : AppColours.paBlackColour1,
+              radius: 12,
+              strokeColor: dark ? AppColours.paWhiteColour : AppColours.paBlackColour1,
+              center: userVM.locationOrigin!
+            );
+
+            Circle destinationCircle = Circle(
+                circleId: const CircleId("destinationId"),
+                fillColor: dark ? AppColours.paWhiteColour : AppColours.paBlackColour1,
+                radius: 12,
+                strokeColor: dark ? AppColours.paWhiteColour : AppColours.paBlackColour1,
+                center: userVM.locationStation!
+            );
+
+            userVM.circleSet.add(originCircle);
+            userVM.circleSet.add(destinationCircle);
+
+            status = OperationStatus(true, AppConsts.noNetworkDetected, AppConsts.operationFailed);
+
+
+          }else{
+            OperationStatus status = OperationStatus(false, AppConsts.couldNotCompleteOperation, AppConsts.couldNotGetPolyLinePoints);
+          }
+        }
+
+
+      }
+      else{
+        // Failed
+        return status;
+      }
+    });
+    return status;
+
+  }
+
+  Future<void> resetMapBounds(LatLngBounds latLngBounds, Completer<GoogleMapController> mapController) async {
+    final GoogleMapController controller = await mapController!.future;
+    controller.animateCamera(CameraUpdate.newLatLngBounds(latLngBounds, 65));
+  }
 
   void setLoadingState(bool state) {
     _loadingMap = state;
@@ -246,24 +325,6 @@ class HomeViewModel with ChangeNotifier {
     return _loadingMap;
   }
 
-  static String getGreeting(String name) {
-    //  https://stackoverflow.com/questions/65185443/if-time-is-before-or-after-specific-time-display-good-morning-good-afternoon
-    String greeting = "";
-    DateTime now = DateTime.now();
-    int hours = now.hour;
-
-    if (hours >= 1 && hours <= 12) {
-      greeting = "Good Morning $name";
-    } else if (hours >= 12 && hours <= 16) {
-      greeting = "Good Afternoon $name";
-    } else if (hours >= 16 && hours <= 21) {
-      greeting = "Good Evening $name";
-    } else if (hours >= 21 && hours <= 24) {
-      greeting = "Good Night $name";
-    }
-
-    return greeting;
-  }
 
   Widget buildProfileTile(BuildContext context, String name, imageUrl) {
     return Positioned(
@@ -302,7 +363,7 @@ class HomeViewModel with ChangeNotifier {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  getGreeting(name),
+                  Utils.getGreeting(name),
                   style: Theme.of(context).textTheme.headlineSmall,
                 ),
                 const SizedBox(
@@ -318,15 +379,258 @@ class HomeViewModel with ChangeNotifier {
     );
   }
 
-  showBottomSheet(BuildContext context){
+  getUserCurrentLocation(BuildContext context, HomeViewModel homeVM,
+      GoogleMapController? mapController) async {
+    try {
+      // Get the real current position of the user
+      Position positionOfUser = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.bestForNavigation
+      );
+
+      homeVM.setCurrentPosition(positionOfUser);
+
+      // Don't user BuildContext across async gaps.  Guard with the
+      // (!mounted) check
+      if (!context.mounted) return;
+      Provider.of<UserViewModel>(context, listen:  false).locationOrigin  = LatLng(
+          homeVM.currentPosition!.latitude, homeVM.currentPosition!.longitude
+      );
+
+
+      // Set the location and animate the camera on google maps to the users current position
+      CameraPosition cameraPosition =
+      CameraPosition(target: Provider.of<UserViewModel>(context, listen:  false).locationOrigin!, zoom: 15);
+      //  _mapController!.animateCamera(CameraUpdate.newCameraPosition(cameraPosition));
+      mapController!.animateCamera(CameraUpdate.newCameraPosition(cameraPosition));
+      //print("This is our address: $humanReadableAddress");
+    } catch (err) {
+      debugPrint(err.toString());
+      // Fix: Don't use context across async gaps.
+      if (!context.mounted) return;
+      Utils.snackBar(PATextString.checkNetwork, context);
+    }
+  }
+
+
+  //  TODO  - update call to controller .setMapStyle - deprecated
+  void _setGoogleMapStyle(
+      String googleMapStyle, GoogleMapController controller) {
+    // TODO setMapStyle deprecated
+    controller.setMapStyle(googleMapStyle);
+    notifyListeners();
+  }
+
+  Future updateMapTheme(GoogleMapController controller, bool isDarkMode) async {
+    try {
+      //color: dark ? AppColours.paWhiteColour : AppColours.blackColour1.withOpacity(0.85),
+      var style = isDarkMode ? MapStyleTheme.night : MapStyleTheme.silver;
+      await Helpers.getThemeFile(style).then((value) {
+        if (value != null) {
+          _setGoogleMapStyle(value, controller);
+        }
+      });
+    } catch (err) {
+      debugPrint('Error in home_vm.dart, line: 26: ${err.toString()}');
+    }
+  }
+}
+
+Container doModalBottomSheet(BuildContext context, bool dark,
+    HomeViewModel homeViewModel, TextEditingController tripStartTextEditingController,
+    TextEditingController tripEndTextEditingController) {
+  return Container(
+    height: (Utils.getScreenHeight(context)),
+    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 2),
+    child: SafeArea(
+      top: false,
+      child: Column(
+        children: <Widget>[
+          //Text(PATextString.selectStation, style: Theme.of(context).textTheme.headlineMedium),
+          const SizedBox(height: PAAppStylesConstants.spaceBetweenItems,),
+          Divider(height:  PAAppStylesConstants.spaceBetweenSections, color: dark? AppColours.paWhiteColour : AppColours.paBlackColour1,),
+          const SizedBox(height: PAAppStylesConstants.spaceBetweenItems,),
+          Row(
+            children: [
+              Column(
+                children: [
+                  Container(
+                    height: 8.0,
+                    width: 8.0,
+                    margin: const EdgeInsets.all(2.0),
+                    decoration: BoxDecoration(
+                      color: dark ? AppColours.paWhiteColour : AppColours.paBlackColour2,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  Container(
+                    height: 40.0,
+                    width: 8.0,
+                    decoration: const BoxDecoration(
+                      color: AppColours.paPrimaryColour,
+                    ),
+                  ),
+                  Container(
+                    height: 8.0,
+                    width: 8.0,
+                    margin: const EdgeInsets.all(2.0),
+                    decoration: BoxDecoration(
+                      color: dark ? AppColours.paWhiteColour : AppColours.paBlackColour2,
+                    ),
+                  )
+                ],
+              ),
+              Expanded(
+                  child: Column(
+                    children: [
+                      TextFormField(
+                        readOnly: true,
+                        controller: tripStartTextEditingController,
+                        decoration: const InputDecoration(
+                          border: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          errorBorder: InputBorder.none,
+                          disabledBorder: InputBorder.none,
+                          isDense: true,
+                          prefixIcon: Icon(Icons.search_sharp),
+                        ),
+                      ),
+                      TextFormField(
+                        controller: tripEndTextEditingController,
+                        decoration: const InputDecoration(
+                          border: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          errorBorder: InputBorder.none,
+                          disabledBorder: InputBorder.none,
+                          isDense: true,
+                          hintText: PATextString.whichStation,
+                          prefixIcon: Icon(Icons.search_sharp),
+                        ),
+                        //  onChange not needed
+                        //onChanged: ,
+                      )
+                    ],
+                  )
+              ),
+            ],
+          ),
+          const SizedBox(height: PAAppStylesConstants.spaceBetweenSections,),
+
+          Expanded(
+              child:           // search shimmer while loading
+              homeViewModel.searchStationsLoading ? buildSearchShimmer() :
+              ListView.builder(
+                  itemCount:  homeViewModel._stations?.length,
+                  shrinkWrap: true,
+                  padding: EdgeInsets.zero,
+                  itemBuilder: (context, index){
+                    //  TODO Make sure that the stations list is not null
+                    //  TODO Handle empty list
+                    final station = homeViewModel._stations?.toList()[index];
+                    return Card(
+                      child: Padding(
+                        padding: const EdgeInsets.only(left: 4, top: 8, right: 4, bottom: 8),
+                        child: ListTile(
+                          leading: Container(
+                            width: 72,
+                            height: 72,
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                width: 4,
+                                color: dark ? AppColours.paAccentDust.withOpacity(0.67) : AppColours.paPrimaryColour.withOpacity(0.67),
+                              ),
+                              // Add Some Shadow
+                              boxShadow: [
+                                BoxShadow(
+                                  spreadRadius: 2,
+                                  blurRadius: 10,
+                                  color: dark? AppColours.paWhiteColour.withOpacity(0.18) : AppColours.blackColour1.withOpacity(0.15),
+                                  offset: const Offset(-3, 9),
+                                ),
+                              ],
+                              borderRadius: BorderRadius.circular(8.0),
+                              shape: BoxShape.rectangle,
+                              image: DecorationImage(
+                                fit: BoxFit.cover,
+                                image: NetworkImage(Utils.getPetrolStationLogoPrefix(station!.logo)),
+                              ),
+                            ),
+                          ),
+                          title: Text(
+                            Utils.truncateText(station.stationName, 28),
+                            style:  Theme.of(context).textTheme.headlineSmall,
+                          ),
+                          subtitle: Row(
+                            children: [
+                              //  Expands the child of a Row, Column, or Flex so that the child
+                              //  fills the available space
+
+                              getStationStatusIcon(station.stationOnline, 30),
+                              const SizedBox( width: PAAppStylesConstants.spaceBetweenItems,),
+                              Text(
+                                Utils.getDistanceAwayText(station.distance, station.siUnit,),
+                                style: Theme.of(context).textTheme.headlineSmall,
+                              ),
+                            ],
+                          ),
+                          trailing: GestureDetector(
+                            onTap: (){
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => StationView(station: station),
+                                ),);
+                            },
+                            child: CircleAvatar(
+                              backgroundColor: dark? AppColours.paWhiteColour.withOpacity(0.18) : AppColours.blackColour1.withOpacity(0.15),
+                              child: const Icon(Icons.more_horiz_sharp, size: 40.0,),
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  }
+              ),
+          ),
+
+
+
+          // listview with results
+          const SizedBox(height: PAAppStylesConstants.spaceBetweenItems,),
+          SizedBox(
+            width: Utils.getScreenWidth(context),
+            child: ElevatedButton(onPressed: (){}, child: Text( PATextString.forgotPassword,
+                style: Theme.of(context).textTheme.bodySmall, )
+            ),
+          ),
+          const SizedBox(height: PAAppStylesConstants.spaceBetweenSections,),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close BottomSheet'),
+            //https://www.youtube.com/watch?v=NgTk1oh_N5g&list=PLWNYjcx_ZHPco3yijOw-KwBQwjjcHc5Rj&index=11
+            // Flutter drop down https://blog.logrocket.com/creating-dropdown-list-flutter/
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+  showBottomSheet(BuildContext context, bool dark, HomeViewModel homeViewModel,
+      TextEditingController tripStartTextEditingController,
+      TextEditingController tripEndTextEditingController){
     showModalBottomSheet<void>(
+
         context: context,
         builder: (BuildContext context) {
-          return doModalBottomSheet(context);
+          return doModalBottomSheet(context, dark, homeViewModel, tripStartTextEditingController,
+          tripEndTextEditingController);
         });
   }
 
-  Widget buildCurrentLocationIcon(BuildContext context) {
+  Widget buildCurrentLocationIcon(BuildContext context, bool dark, HomeViewModel homeViewModel,
+      TextEditingController tripStartTextEditingController,  TextEditingController tripEndTextEditingController) {
     return Align(
       alignment: Alignment.bottomRight,
       child: Padding(
@@ -336,8 +640,16 @@ class HomeViewModel with ChangeNotifier {
             //https://api.flutter.dev/flutter/material/showModalBottomSheet.html
             showModalBottomSheet<void>(
                 context: context,
+                isScrollControlled: true,
                 builder: (BuildContext context) {
-                  return doModalBottomSheet(context);
+                  return DraggableScrollableSheet(
+                    expand: false,
+                    initialChildSize: 0.85,
+                    maxChildSize: 0.85,
+                    minChildSize: 0.25,
+                      builder: (context, scrollController) => doModalBottomSheet(context, dark, homeViewModel,
+                      tripStartTextEditingController, tripEndTextEditingController),
+                  );
                 });
           },
           child: const CircleAvatar(
@@ -353,72 +665,29 @@ class HomeViewModel with ChangeNotifier {
     );
   }
 
-  Widget buildBottomSheets(BuildContext context, bool dark) {
-    return Align(
-      alignment: Alignment.bottomCenter,
-      child: Container(
-        width: (Utils.getScreenWidth(context) * 0.65),
-        height: 28,
-        decoration: BoxDecoration(
-            color: dark
-                ? AppColours.paWhiteColour
-                : AppColours.blackColour1.withOpacity(0.85),
-            boxShadow: [
-              BoxShadow(
-                color: dark
-                    ? AppColours.paWhiteColour.withOpacity(0.48)
-                    : AppColours.blackColour1.withOpacity(0.85),
-                spreadRadius: 4,
-                blurRadius: 10,
-              ),
-            ],
-            borderRadius: const BorderRadius.only(
-                topRight: Radius.circular(12), topLeft: Radius.circular(12))),
-        child: Center(
-          child: Container(
-            width: (Utils.getScreenWidth(context) * 0.6),
-            height: 2,
-            color: dark ? AppColours.blackColour1 : AppColours.paWhiteColour,
+Widget buildSearchShimmer(){
+  return Card(
+    child: Padding(
+      padding: const EdgeInsets.only(left: 4, top: 8, right: 4, bottom: 8),
+      child: ListTile(
+        leading: ShimmerWidget.circular(
+          width: 64,
+          height: 64,
+          shapeBorder: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8)
           ),
         ),
+        title: const ShimmerWidget.rectangular(height:12),
+        subtitle: const ShimmerWidget.rectangular(height: 8, width: 104.0 )/* 55% of screen width */,
+        trailing: const ShimmerWidget.circular(width: 40, height: 40),
       ),
-    );
-  }
+    ),
+  );
+}
 
-  //  https://api.flutter.dev/flutter/material/showModalBottomSheet.html
-  Container doModalBottomSheet(BuildContext context) {
-    return Container(
-      width: Utils.getScreenWidth(context),
-      height: (Utils.getScreenHeight(context) * 0.5),
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      decoration: const BoxDecoration(
-        color: Colors.white10,
-        borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(8), topRight: Radius.circular(8)),
-      ),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            const Text('Modal BottomSheet'),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Close BottomSheet'),
-
-              //https://www.youtube.com/watch?v=NgTk1oh_N5g&list=PLWNYjcx_ZHPco3yijOw-KwBQwjjcHc5Rj&index=11
-              // Flutter drop down https://blog.logrocket.com/creating-dropdown-list-flutter/
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void logout(BuildContext context) async {
-    await _authenticationService.signOut().then((value) {
-      Navigator.pushReplacementNamed(context, AppConsts.rootLogin);
-    });
+  Icon getStationStatusIcon(bool online, double size){
+    return online ? Icon(Icons.check_circle_outline_sharp, color: AppColours.paPrimaryColour, size: size,):
+        Icon(Icons.error_outline_sharp, color: AppColours.paErrorColour, size: size,);
   }
 
   DecorationImage _carImage(String? image) {
@@ -432,5 +701,3 @@ class HomeViewModel with ChangeNotifier {
           fit: BoxFit.cover);
     }
   }
-
-}
