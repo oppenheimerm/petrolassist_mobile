@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:petrol_assist_mobile/views/home_view.dart';
+import 'package:petrol_assist_mobile/views/station.dart';
 import 'package:provider/provider.dart';
 
+import '../components/shimmer_search.dart';
 import '../resources/colours.dart';
 import '../resources/styles_constants.dart';
 import '../resources/text_string.dart';
@@ -43,12 +45,32 @@ class _SearchStationsViewState extends State<SearchStationsView> {
 
     final dark = Utils.isDarkMode(context);
 
+    Widget buildSearchShimmer(){
+      return Card(
+        child: Padding(
+          padding: const EdgeInsets.only(left: 4, top: 8, right: 4, bottom: 8),
+          child: ListTile(
+            leading: ShimmerWidget.circular(
+                width: 64,
+                height: 64,
+              shapeBorder: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8)
+              ),
+            ),
+            title: const ShimmerWidget.rectangular(height:12),
+            subtitle: const ShimmerWidget.rectangular(height: 8, width: 104.0 )/* 55% of screen width */,
+            trailing: const ShimmerWidget.circular(width: 40, height: 40),
+          ),
+        ),
+      );
+    }
+
     return SafeArea(
       child: Scaffold(
-        backgroundColor: dark ? AppColours.paAccentDust : AppColours.blackColour1,
+        backgroundColor: dark ? AppColours.blackColour2 : AppColours.paAccentDust,
         appBar: AppBar(
           elevation: 2,
-          backgroundColor: dark? AppColours.paAccentDust : AppColours.paWhiteColour,
+          backgroundColor: dark? AppColours.blackColour1 : AppColours.paWhiteColour,
           leading: BackButton(
             onPressed: (){
               Navigator.push(
@@ -65,13 +87,19 @@ class _SearchStationsViewState extends State<SearchStationsView> {
 
           child: Consumer<SearchStationViewModel>(builder: (context, vm, _){
           return vm.searchStationsLoading ?
-              const Center(
+              // TODO works / but using shimmer widget so we can remove
+              /* const Center(
                 child: CircularProgressIndicator(
                   color: Colors.orange,
                   backgroundColor: Colors.blueGrey,
                   value: 0.33,
                 ),
-              ) :
+              ) */ListView.builder(
+            itemCount: 20,
+              itemBuilder: (context, index){
+                return buildSearchShimmer();
+              }
+          ) :
             ListView.builder(
                 itemCount: vm.getStations()?.length,
               itemBuilder: (context, index){
@@ -80,27 +108,27 @@ class _SearchStationsViewState extends State<SearchStationsView> {
                   final station = vm.getStations()?.toList()[index];
                   return Card(
                     child: Padding(
-                      padding: const EdgeInsets.only(left: 4, top: 4, right: 4, bottom: 8),
+                      padding: const EdgeInsets.only(left: 4, top: 8, right: 4, bottom: 8),
                       child: ListTile(
-                        //leading: CircleAvatar(child: Image.network(Utils.getPetrolStationLogoPrefix(station!.logo)),),
                         leading: Container(
-                          width: 84,
-                          height: 84,
+                          width: 68,
+                          height: 68,
                           decoration: BoxDecoration(
                             border: Border.all(
                               width: 4,
-                              color: dark ? AppColours.paPrimaryColour : AppColours.paAccentDust.withOpacity(0.67),
+                              color: dark ? AppColours.paAccentDust.withOpacity(0.67) : AppColours.paPrimaryColour.withOpacity(0.67),
                             ),
                             // Add Some Shadow
                             boxShadow: [
                               BoxShadow(
                                 spreadRadius: 2,
                                 blurRadius: 10,
-                                color: dark? AppColours.paWhiteColour.withOpacity(0.09) : AppColours.blackColour1.withOpacity(0.15),
+                                color: dark? AppColours.paWhiteColour.withOpacity(0.18) : AppColours.blackColour1.withOpacity(0.15),
                                 offset: const Offset(-3, 9),
                               ),
                             ],
-                            shape: BoxShape.circle,
+                            borderRadius: BorderRadius.circular(8.0),
+                            shape: BoxShape.rectangle,
                             image: DecorationImage(
                               fit: BoxFit.cover,
                               image: NetworkImage(Utils.getPetrolStationLogoPrefix(station!.logo)),
@@ -109,7 +137,7 @@ class _SearchStationsViewState extends State<SearchStationsView> {
                           ),
                         title: Text(
                           Utils.truncateText(station.stationName, 28),
-                          style:  Theme.of(context).textTheme.titleLarge,
+                          style:  Theme.of(context).textTheme.headlineMedium,
                         ),
                         subtitle: /*Text(
                           Utils.getDistanceAwayText(station.distance, station.siUnit),
@@ -118,19 +146,27 @@ class _SearchStationsViewState extends State<SearchStationsView> {
                           children: [
                             //  Expands the child of a Row, Column, or Flex so that the child
                             //  fills the available space
-                            Icon(
-                              Icons.local_gas_station_sharp,
-                              color: station.stationOnline ? AppColours.paPrimaryColour : AppColours.blackColour1.withOpacity(0.45),
-                            ),
+
+                            _searchStationViewModel.getStationStatusIcon(station.stationOnline, 30),
                             const SizedBox( width: PAAppStylesConstants.spaceBetweenItems,),
                             Text(
                               Utils.getDistanceAwayText(station.distance, station.siUnit,),
-                              style: Theme.of(context).textTheme.bodyMedium,
+                              style: Theme.of(context).textTheme.headlineSmall,
                             ),
                           ],
                         ),
-                        trailing: const CircleAvatar(
-                          child: Icon(Icons.info_sharp),
+                        trailing: GestureDetector(
+                          onTap: (){
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => StationView(station: station),
+                              ),);
+                          },
+                          child: CircleAvatar(
+                            backgroundColor: dark? AppColours.paWhiteColour.withOpacity(0.18) : AppColours.blackColour1.withOpacity(0.15),
+                            child: const Icon(Icons.more_horiz_sharp, size: 40.0,),
+                          ),
                         ),
                       ),
                     ),
@@ -140,6 +176,8 @@ class _SearchStationsViewState extends State<SearchStationsView> {
           }),
         ),
       ),
-    );
+
+    );;
+
   }
 }

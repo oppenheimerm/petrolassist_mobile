@@ -11,7 +11,7 @@ class PATextStyles{
     headlineMedium: const TextStyle().copyWith( fontSize: 24, fontWeight: FontWeight.w600, color: AppColours.paBlackColour1 ),
     headlineSmall: const TextStyle().copyWith( fontSize: 18, fontWeight: FontWeight.w400, color: AppColours.paBlackColour1 ),
 
-    titleLarge: const TextStyle().copyWith( fontSize: 16, fontWeight: FontWeight.w500, color: AppColours.paBlackColour1 ),
+    titleLarge: const TextStyle().copyWith( fontSize: 20, fontWeight: FontWeight.w500, color: AppColours.paBlackColour1 ),
     titleMedium: const TextStyle().copyWith( fontSize: 16, fontWeight: FontWeight.w400, color: AppColours.paBlackColour1 ),
     titleSmall: const TextStyle().copyWith( fontSize: 16, fontWeight: FontWeight.w300, color: AppColours.paBlackColour1 ),
 
@@ -28,7 +28,7 @@ class PATextStyles{
     headlineMedium: const TextStyle().copyWith( fontSize: 24, fontWeight: FontWeight.w600, color: Colors.white ),
     headlineSmall: const TextStyle().copyWith( fontSize: 18, fontWeight: FontWeight.w400, color: Colors.white ),
 
-    titleLarge: const TextStyle().copyWith( fontSize: 16, fontWeight: FontWeight.w500, color: Colors.white ),
+    titleLarge: const TextStyle().copyWith( fontSize: 20, fontWeight: FontWeight.w500, color: Colors.white ),
     titleMedium: const TextStyle().copyWith( fontSize: 16, fontWeight: FontWeight.w400, color: Colors.white ),
     titleSmall: const TextStyle().copyWith( fontSize: 16, fontWeight: FontWeight.w300, color: Colors.white ),
 

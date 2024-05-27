@@ -9,8 +9,8 @@ class PABottomSheetsStyles {
 
   static BottomSheetThemeData lightBottomSheetsTheme = BottomSheetThemeData(
     showDragHandle: true,
-    backgroundColor: AppColours.paWhiteColour,
-    modalBackgroundColor: AppColours.paWhiteColour,
+    backgroundColor: AppColours.paAccentDust,
+    modalBackgroundColor: AppColours.paAccentDust,
     constraints: const BoxConstraints( minWidth: double.infinity),
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))
   );

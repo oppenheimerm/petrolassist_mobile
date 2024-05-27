@@ -4,14 +4,14 @@ import 'dart:core';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:petrol_assist_mobile/view_models/search_station_vm.dart';
 import 'package:petrol_assist_mobile/view_models/user_vm.dart';
-import 'package:petrol_assist_mobile/views/search_stations.dart';
 import 'package:provider/provider.dart';
 
 import '../app_constants.dart';
-import '../helpers.dart';
+import '../components/trip_confirmation_widget.dart';
+import '../components/trip_selector_widget.dart';
 import '../resources/colours.dart';
-import '../resources/styles_constants.dart';
 import '../resources/text_string.dart';
 import '../utilities/utils.dart';
 import '../view_models/home_vm.dart';
@@ -27,22 +27,23 @@ class HomeView extends StatefulWidget {
 
 class _HomeViewState extends State<HomeView> {
 
+  late final TextEditingController tripStartTextEditingController = TextEditingController();
+  late final TextEditingController tripEndTextEditingController = TextEditingController();
   //final _globalKey = GlobalKey();
   //bool get isMounted => _globalKey.currentState != null && _globalKey.currentState!.mounted;
 
-  //  This package contains functions to decode google encoded polyline string
-  //  which returns a list of co-ordinates indicating route between two
-  //  geographical position
-  //
-  //  Set<E> class - https://api.flutter.dev/flutter/dart-core/Set-class.html
-  Set<Polyline> polylineSet = {};
-  Set<Marker> markerSet = {};
-  Set<Circle> circleSet = {};
+
+  List<LatLng> pLineCoordinateList = [];
+
+  //  TODO - remove in view model
+  //Set<Polyline> polylineSet = {};
+  // TODO - remove below, now set in user view model.
+  //Set<Marker> markerSet = {};
+  // TODO - remove below, now set in user view model.
+  //Set<Circle> circleSet = {};
 
   bool openNavigationDrawer = true;
 
-//  We'll substitute with active nearby stations
-  bool activeNearbyDriverKeysLoaded = false;
 
 
   BitmapDescriptor? activeNearbyIcon;
@@ -53,16 +54,15 @@ class _HomeViewState extends State<HomeView> {
     //getGoogleMap();
   }
 
+
+  final TextEditingController _searchController = TextEditingController();
   final Completer<GoogleMapController> _googleMapCompleterController = Completer<GoogleMapController>();
   GoogleMapController? _mapController;
   // The current position of the user.
  // Position? _currentPositionOfUser;
 
-  final HomeViewModel _homeViewModel = HomeViewModel(
-      MapStyleTheme.silver
-  );
-
-  //late final UserModel? _userModel;
+  final HomeViewModel _homeViewModel = HomeViewModel( );
+  final SearchStationsViewModel _searchStationsViewModel = SearchStationsViewModel();
 
   //  Testing, just use this location as initial
   //Kew Gardens / TW9 3JR (51.4777125 , -0.2882984)
@@ -72,30 +72,12 @@ class _HomeViewState extends State<HomeView> {
   );
 
 
-  /*@override
-  void initState() async {
-    super.initState();
-    _userModel = await UserViewModel().getCurrentUser();
-  }*/
-
-  /*getUserCurrentLocation() async{
-    try{
-      // Get the real current position of the user
-      Position positionOfUser = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.bestForNavigation);
-      _currentPositionOfUser = positionOfUser;
-      // Convert to lat/long type
-      LatLng latLngPositionOfUser = LatLng(_currentPositionOfUser!.latitude, _currentPositionOfUser!.longitude);
-      // Set the location and animate the camera on google maps to the users current position
-      CameraPosition cameraPosition = CameraPosition(target: latLngPositionOfUser, zoom: 15);
-      _mapController!.animateCamera(CameraUpdate.newCameraPosition(cameraPosition));
-    }catch(err){
-      debugPrint(err.toString());
-    }
-  }*/
-
   @override
   void dispose() {
     _mapController?.dispose();
+    _searchController.dispose();
+    tripStartTextEditingController.dispose();
+    tripEndTextEditingController.dispose();
     super.dispose();
   }
 
@@ -103,7 +85,7 @@ class _HomeViewState extends State<HomeView> {
   Widget build(BuildContext context) {
 
     final dark = Utils.isDarkMode(context);
-    final userVM = Provider.of<UserViewModel>(context, listen: true);
+
 
     return SafeArea(
       child: Scaffold(
@@ -114,144 +96,49 @@ class _HomeViewState extends State<HomeView> {
           child:Consumer<HomeViewModel>(builder: (context, value, _){
             // we can now use "value", a variable of homeViewModel
             //  i.e value.setGoogleMapStyle()
+
+            //  Set search controller text
+            _searchController.text = value.addressStringFromLatLng != null ? value.addressStringFromLatLng! : PATextString.acquiringLocation;
             return Stack(
               children: [
       
                 getGoogleMap( dark),
-
-                value.buildProfileTile(context, _homeViewModel.getUser!.firstName, userVM.getCarPhotoUrl()),
+                value.buildProfileTile(context, _homeViewModel.getUser!.firstName, Provider.of<UserViewModel>(context, listen:  false).getCarPhotoUrl()),
                 //value.buildTextField(context),
-                value.buildCurrentLocationIcon(context),
-                value.buildBottomSheets(context,  dark),
-                //https://www.youtube.com/watch?v=NgTk1oh_N5g&list=PLWNYjcx_ZHPco3yijOw-KwBQwjjcHc5Rj&index=11
+                buildCurrentLocationIcon(context, dark, _homeViewModel, tripStartTextEditingController,
+                    tripEndTextEditingController),
+
+                getTripSelectionWidgets(Provider.of<UserViewModel>(context, listen: false), dark),
+
+
+                // map icon switcher
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 300),
+                  transitionBuilder: (child, animation){
+                    return ScaleTransition(
+                        scale: animation,
+                      child: child,
+                    );
+                  },
+                  child: Provider.of<UserViewModel>(context, listen: true).hasStartAddress ?
+                  Align(
+                    alignment: Alignment.center,
+                    child:   Image(
+                      height: 36,
+                      image: AssetImage( dark ? AppConsts.locationPinIconLight : AppConsts.locationPinIconDark),
+                    ),
+                  )
+                  :
                 Align(
                   alignment: Alignment.center,
-                  child:   Image(
-                    height: 40,
-                    image: AssetImage( dark ? AppConsts.locationPinIconLight : AppConsts.locationPinIconDark),
+                  child: Icon(
+                    Icons.refresh_sharp,
+                    size: 36,
+                    color: dark ? AppColours.paWhiteColour : AppColours.blackColour1,
                   ),
                 ),
-
-                // SHOW / HIDE
-                // WORKS 29/04/2024
-                //currentLatLongLocation(value),
-                 // UI for searching location
-                Positioned(
-                    top: 120,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: dark ? AppColours.paPrimaryColourActive.withOpacity(0.85) : AppColours.paWhiteColour,
-                              borderRadius: BorderRadius.circular(8.0),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: dark
-                                      ? AppColours.paWhiteColour.withOpacity(0.48)
-                                      : AppColours.blackColour1.withOpacity(0.45),
-                                  spreadRadius: 4,
-                                  blurRadius: 10,
-                                ),
-                              ],
-                            ),
-                            child: Column(
-                              children: [
-                                Container(
-                                  decoration: BoxDecoration(
-                                    color: dark ? AppColours.blackColour1 : Colors.white.withOpacity(0.65),
-                                    borderRadius: BorderRadius.circular(8.0),
-                                  ),
-                                  child: Column(
-                                    children: [
-                                      Padding(
-                                        padding: const EdgeInsets.only(top:8.0, bottom: 8.0, left: 8.0),
-                                        child: Row(
-                                          children: [
-                                            Icon(
-                                              Icons.location_on_sharp,
-                                              color: dark? AppColours.paWhiteColour : AppColours.blackColour1,
-                                            ),
-                                            const SizedBox(width: PAAppStylesConstants.sm,),
-                                            Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: [
-                                                Text(PATextString.from, style: Theme.of(context).textTheme.headlineMedium),
-                                                //Text(("${value.addressStringToLatLng != null ? value.addressStringToLatLng?.substring(0, 28) : "Click for stations" }  "), style: Theme.of(context).textTheme.headlineSmall),
-                                                Text(("${value.addressStringFromLatLng != null ? value.addressStringFromLatLng?.substring(0, 28) : PATextString.acquiringLocation }  "), style: Theme.of(context).textTheme.headlineSmall),
-                                                //Text(("${value.addressStringFromLatLng?.substring(0, 28)}..." ?? ""), style: Theme.of(context).textTheme.headlineSmall),
-                                              ],
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      const SizedBox(height: PAAppStylesConstants.spaceBetweenItems,),
-
-                                      Divider(
-                                        height: 1,
-                                        thickness: 2,
-                                        color: dark? AppColours.paPrimaryColourActive.withOpacity(0.85) : AppColours.blackColour1.withOpacity(0.45),
-                                      ),
-
-                                      const SizedBox(height: PAAppStylesConstants.spaceBetweenItems),
-
-                                      Padding(
-                                        padding: const EdgeInsets.only(bottom: 12.0, left: 8.0),
-                                        child: GestureDetector(
-                                          // TODO check onl if we have lat / longt parms.
-                                          // Remove hardcoded countryId
-                                          onTap: (){
-                                            if(_homeViewModel.currentPosition != null){
-
-                                              Navigator.push(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                    builder: (context) => SearchStationsView(
-                                                      latitude: _homeViewModel.currentPosition!.latitude,
-                                                      longitude: _homeViewModel.currentPosition!.longitude,
-                                                      countryId: 1,
-                                                      distanceUnit: 0
-                                                    ),
-                                              ),);
-
-                                            }
-
-                                          },
-                                          child: Row(
-                                            children: [
-                                              Icon(Icons.location_on_sharp, color: dark ? AppColours.paWhiteColour : AppColours.blackColour1,),
-                                              const SizedBox(width: PAAppStylesConstants.sm,),
-                                              Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                children: [
-                                                  Text(PATextString.from, style: Theme.of(context).textTheme.headlineMedium),
-                                                  //Text(("${value.addressStringFromLatLng?.substring(0, 28)}..." ?? ""), style: Theme.of(context).textTheme.headlineSmall),
-                                                  Text(("${value.addressStringToLatLng != null ? value.addressStringToLatLng?.substring(0, 28) : PATextString.clickForStations }  "), style: Theme.of(context).textTheme.headlineSmall),
-                                                ],
-
-
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-
-                                    ],
-                                  ),
-                                )
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
                 ),
+
 
               ],
             );
@@ -259,34 +146,61 @@ class _HomeViewState extends State<HomeView> {
         ),
       ),
     );
+
+
   }
 
-  /*AppBar homeAppBar([bool? showBackButton]) {
-    return AppBar(
-      title: const Text("PetrolAssist"),
-      centerTitle: true,
-      automaticallyImplyLeading: false,
-      backgroundColor: AppColours.transparentColour,
-      elevation: 0,
-      actions: [
-        IconButton(
-          onPressed: () =>{
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const EditProfileView()),
-            )
-        },
-          icon: const Icon(Icons.settings_sharp),),
-        IconButton(
-            onPressed: () {
-              _homeViewModel.logout(context);
-            },
-            icon: const Icon(Icons.logout_sharp))
-      ],
-    );
-  }*/
+  Future<void> resetMapBounds(LatLngBounds latLngBounds) async {
+    final GoogleMapController controller = await _googleMapCompleterController!.future;
+    controller.animateCamera(CameraUpdate.newLatLngBounds(latLngBounds, 65));
+  }
 
-  getUserCurrentLocation() async {
+  Widget getTripSelectionWidgets(UserViewModel userViewModel, bool dark)  {
+
+
+    if(userViewModel.hasDirectionDetailsInfo == true && userViewModel.directionDetailsInfo != null)
+      {
+        //  TODO - Begin Trip widget here
+        //  We no longer need the the TripConfirmationWidget or TripSelectorWidget widgets
+        //  show an empty widget
+        return TripConfirmationWidget(
+          dark: dark, stationAddress: Provider.of<UserViewModel>(context).addressStation!,
+          startAddress: Provider.of<UserViewModel>(context).addressStringOrigin!,
+          homeViewModel: _homeViewModel,
+          pLineCoordinateList: pLineCoordinateList,
+          polylineSet: _homeViewModel.polylineSet,
+          mapController: _googleMapCompleterController,
+
+        );
+      }
+    else{
+
+      // reset the map
+      //_homeViewModel.getUserCurrentLocation(context, _homeViewModel, _mapController);
+      return Provider.of<UserViewModel>(context, listen: false).stationAddressConfirmed ?
+      TripConfirmationWidget(
+        dark: dark, stationAddress: Provider.of<UserViewModel>(context).addressStation!,
+        startAddress: Provider.of<UserViewModel>(context).addressStringOrigin!,
+        homeViewModel: _homeViewModel,
+        pLineCoordinateList: pLineCoordinateList,
+        polylineSet: _homeViewModel.polylineSet,
+        mapController: _googleMapCompleterController,
+
+      ) :
+
+      TripSelectorWidget(
+          dark: dark,
+          searchStationsViewModel: _searchStationsViewModel,
+          searchController: _searchController,
+          mapController: _mapController,
+      );
+    }
+
+  }
+
+
+  //  TODO- remove, now in view model
+  /*getUserCurrentLocation() async {
     try {
       // Get the real current position of the user
       Position positionOfUser = await Geolocator.getCurrentPosition(
@@ -294,24 +208,27 @@ class _HomeViewState extends State<HomeView> {
       );
       _homeViewModel.setCurrentPosition(positionOfUser);
 
-      _homeViewModel.locationOrigin = LatLng(
+      // Don't user BuildContext across async gaps.  Guard with the
+      // (!mounted) check
+      if (!mounted) return;
+      Provider.of<UserViewModel>(context, listen:  false).locationOrigin  = LatLng(
          _homeViewModel.currentPosition!.latitude, _homeViewModel.currentPosition!.longitude
       );
 
 
       // Set the location and animate the camera on google maps to the users current position
       CameraPosition cameraPosition =
-      CameraPosition(target: _homeViewModel.locationOrigin!, zoom: 15);
+      CameraPosition(target: Provider.of<UserViewModel>(context, listen:  false).locationOrigin!, zoom: 15);
+      //  _mapController!.animateCamera(CameraUpdate.newCameraPosition(cameraPosition));
       _mapController!.animateCamera(CameraUpdate.newCameraPosition(cameraPosition));
-
-
       //print("This is our address: $humanReadableAddress");
     } catch (err) {
       debugPrint(err.toString());
+      // Fix: Don't use context across async gaps.
       if (!context.mounted) return;
       Utils.snackBar(PATextString.checkNetwork, context);
     }
-  }
+  }*/
 
   getGoogleMap(bool dark) {
     return  Positioned(
@@ -326,34 +243,64 @@ class _HomeViewState extends State<HomeView> {
           zoomControlsEnabled: false,
           // for testing on emulator we'll use our keyGarden var
           initialCameraPosition: _keyGardens,
-          polylines: polylineSet,
-          markers: markerSet,
-          circles: circleSet,
+          polylines: _homeViewModel.polylineSet,
+          markers: Provider.of<UserViewModel>(context).markerSet,
+          circles: Provider.of<UserViewModel>(context).circleSet,
           onMapCreated: (GoogleMapController googleMapController) async {
             _mapController = googleMapController;
+            //  Error with provider here
             await _homeViewModel.updateMapTheme(googleMapController, dark);
             _googleMapCompleterController.complete(_mapController);
-            //locateUserPosition
-            getUserCurrentLocation();
+
+            //  DON'T use BuildContext across asynchronous gaps.
+            if (!context.mounted) return;
+            await _homeViewModel.getUserCurrentLocation(
+              context,
+              _homeViewModel,
+              _mapController
+            );
           },
 
-          // TODO
-        // Causes endless loop
-          onCameraMove: (CameraPosition? position){
-            if( _homeViewModel.locationOrigin != position?.target){
-              // set it to this new target
+        //  TODO
+        //onCameraMoveStarted: _homeViewModel.updateCurrentLocationSet(false),
 
-              // TODO
-              // reset location
-             _homeViewModel.locationOrigin = position?.target;
-             _homeViewModel.currentLocationSet = false;
-            };
+          onCameraMove: (CameraPosition? position){
+
+            // If we're returning to this screen from the Station details, where
+            // we have already selected the station:
+            //Provider.of<UserViewModel>(context, listen: false).stationAddressConfirmed == true
+            // ignore camera moves
+            if(Provider.of<UserViewModel>(context, listen: false).stationAddressConfirmed == true){
+              return;
+            }else{
+              if( Provider.of<UserViewModel>(context, listen: false).locationOrigin != position?.target){
+                // set it to this new target
+
+                // TODO
+                // reset location
+                Provider.of<UserViewModel>(context, listen: false).locationOrigin = position?.target;
+                // set by user on button click event
+                Provider.of<UserViewModel>(context, listen: false).startAddressConfirmed = false;
+                Provider.of<UserViewModel>(context, listen: false).hasStartAddress = false;
+              };
+            }
+
           },
 
         // TODO
         onCameraIdle: () async {
             // here we get address from lat/long
-          await _homeViewModel.getHumanReadableAddressFromLatLng();
+
+          // If we're returning to this screen from the Station details, where
+          // Where we have already selected the station:
+          //Provider.of<UserViewModel>(context, listen: false).stationAddressConfirmed == true
+          // return
+          if(Provider.of<UserViewModel>(context, listen: false).stationAddressConfirmed == true){
+            return;
+          }else{
+            await _homeViewModel.getHumanReadableAddressFromLatLng(Provider.of<UserViewModel>(context, listen: false));
+          }
+
         },
       ),
 
@@ -362,7 +309,7 @@ class _HomeViewState extends State<HomeView> {
 
   Visibility currentLatLongLocation(HomeViewModel vm){
     return Visibility(
-      visible: vm.currentLocationSet == true,
+      visible: Provider.of<UserViewModel>(context, listen:  false).startAddressConfirmed == true,
       child: Positioned(
         top: 140,
         right: 20,
@@ -386,5 +333,7 @@ class _HomeViewState extends State<HomeView> {
       ),
     );
   }
+
+
 }
 

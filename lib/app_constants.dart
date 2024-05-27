@@ -10,7 +10,8 @@ enum ApiRequestType{
   refreshToken,
   resendVerificationToken,
   requestGeoCodeLocation,
-  requestStationsData
+  requestStationsData,
+  requestDirections,
 }
 
 AuthStatus getStatus(String authStatus)
@@ -101,9 +102,9 @@ class AppConsts{
   static const String verifyEmail = "/verifyEmail";
   static const String rootSearchStations = "/searchStations";
 
-  //static const String baseUrl = "https://psusersapi.azurewebsites.net";
+  static const String baseUrl = "https://pawebapiservice.azurewebsites.net";
   //static const String baseUrl = "http://192.168.1.152:8000";
-  static const String baseUrl = "http://10.0.2.2:5008";
+  //static const String baseUrl = "http://10.0.2.2:5008";
   static const String memberFolderPostfix = "/usersimages";
 
 //  Keys
@@ -141,6 +142,7 @@ class AppConsts{
   static const int userEmailNotVerified = 3008;
   static const int getRequestFailed = 3009;
   static const int faildToParseData = 3010;
+  static const int couldNotGetPolyLinePoints = 3011;
 
   //  const network Errors
   static const int unauthorized = 401;
@@ -153,6 +155,12 @@ class AppConsts{
 
   //  Images
   static const verifyEmailImage = "$baseImageUrl/confirm-email.png";
+
+
+  //  Friendly error message string
+  static const couldNotGetDirection = "Could not get directions.";
+  static const String noNetworkDetected = "Please check your network connection.";
+  static const String couldNotCompleteOperation = "Could not complete operation";
 
 
 
@@ -172,6 +180,8 @@ class AppConsts{
         return "https://maps.googleapis.com/maps/api/geocode/json?latlng=";
       case 'requestStationsData':
         return "$baseUrl/api/Stations/get-nearest-stations";
+      case 'requestDirections':
+        return "https://maps.googleapis.com/maps/api/directions/json?";
       default:
         throw const FormatException('Invalid ApiRequestType!');
     }

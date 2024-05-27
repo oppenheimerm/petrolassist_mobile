@@ -2,20 +2,20 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:petrol_assist_mobile/resources/colours.dart';
 import 'package:petrol_assist_mobile/resources/text_string.dart';
 import 'package:petrol_assist_mobile/service/operation_status.dart';
 
 import '../app_constants.dart';
 import '../models/station.dart';
 import '../models/user.dart';
-import '../request_response/authentication_request_response.dart';
 import '../service/authentication/authentication_service.dart';
 import '../service/local_storage.dart';
 import '../service/network_get_request.dart';
 import '../service/network_service.dart';
 
 
-class SearchStationViewModel with ChangeNotifier {
+class SearchStationsViewModel with ChangeNotifier {
 
   final AuthenticationService _authenticationService = AuthenticationService();
   final NetworkGetRequests _networkGetRequests = NetworkGetRequests();
@@ -37,6 +37,27 @@ class SearchStationViewModel with ChangeNotifier {
 
   List<StationModel>? getStations(){
     return _stations;
+  }
+
+  Icon getStationStatusIcon(bool online, double size){
+
+    if(online)
+    {
+      return Icon(
+        Icons.done_sharp,
+        size: size,
+        weight: 900,
+        color: AppColours.paPrimaryColour,
+      );
+    }else{
+      return Icon(
+          Icons.close_sharp,
+          size: size,
+          weight: 900,
+          color: AppColours.paErrorColour
+      );
+    }
+
   }
 
 
@@ -91,5 +112,3 @@ class SearchStationViewModel with ChangeNotifier {
   }
 
 }
-
-
