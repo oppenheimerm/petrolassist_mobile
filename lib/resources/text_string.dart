@@ -53,6 +53,7 @@ static const String emailNotVerified = "EMAIL_NOT_VERIFIED";
 //  Station
 static const String stationDetails = "Station Details";
 static const String confirmStationSelection = "Select station";
+static const String assistanceAvailable = "Assistance";
 
 
 // Verify email view

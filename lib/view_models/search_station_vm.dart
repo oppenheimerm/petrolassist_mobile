@@ -62,7 +62,7 @@ class SearchStationsViewModel with ChangeNotifier {
 
 
   Future<OperationStatus?> getNearestStations(double lat, double longt,
-      int countryId, intDistanceUnit) async {
+      intDistanceUnit) async {
     OperationStatus? status;
 
     // Check network
@@ -72,7 +72,7 @@ class SearchStationsViewModel with ChangeNotifier {
 
         var url =
             "${AppConsts.getUrl(ApiRequestType
-            .requestStationsData)}?fromLat=$lat&fromLongt=$longt&countryId=$countryId&units=$intDistanceUnit";
+            .requestStationsData)}?fromLat=$lat&fromLongt=$longt&units=$intDistanceUnit";
 
         final response = await http.get(
           Uri.parse(url),

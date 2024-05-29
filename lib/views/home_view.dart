@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:core';
 
 import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:petrol_assist_mobile/view_models/search_station_vm.dart';
 import 'package:petrol_assist_mobile/view_models/user_vm.dart';
@@ -29,8 +28,14 @@ class _HomeViewState extends State<HomeView> {
 
   late final TextEditingController tripStartTextEditingController = TextEditingController();
   late final TextEditingController tripEndTextEditingController = TextEditingController();
-  //final _globalKey = GlobalKey();
-  //bool get isMounted => _globalKey.currentState != null && _globalKey.currentState!.mounted;
+  final Completer<GoogleMapController> _googleMapCompleterController = Completer<GoogleMapController>();
+  final TextEditingController _searchController = TextEditingController();
+  final HomeViewModel _homeViewModel = HomeViewModel( );
+  final SearchStationsViewModel _searchStationsViewModel = SearchStationsViewModel();
+
+  GoogleMapController? _mapController;
+  // The current position of the user.
+  // Position? _currentPositionOfUser;
 
 
   List<LatLng> pLineCoordinateList = [];
@@ -44,25 +49,9 @@ class _HomeViewState extends State<HomeView> {
 
   bool openNavigationDrawer = true;
 
+  //  TODO - remove if not being used
+  //BitmapDescriptor? activeNearbyIcon;
 
-
-  BitmapDescriptor? activeNearbyIcon;
-
-  @override
-  void initState() {
-    super.initState();
-    //getGoogleMap();
-  }
-
-
-  final TextEditingController _searchController = TextEditingController();
-  final Completer<GoogleMapController> _googleMapCompleterController = Completer<GoogleMapController>();
-  GoogleMapController? _mapController;
-  // The current position of the user.
- // Position? _currentPositionOfUser;
-
-  final HomeViewModel _homeViewModel = HomeViewModel( );
-  final SearchStationsViewModel _searchStationsViewModel = SearchStationsViewModel();
 
   //  Testing, just use this location as initial
   //Kew Gardens / TW9 3JR (51.4777125 , -0.2882984)
@@ -74,12 +63,13 @@ class _HomeViewState extends State<HomeView> {
 
   @override
   void dispose() {
-    _mapController?.dispose();
+    _mapController!.dispose();
     _searchController.dispose();
     tripStartTextEditingController.dispose();
     tripEndTextEditingController.dispose();
     super.dispose();
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -101,18 +91,20 @@ class _HomeViewState extends State<HomeView> {
             _searchController.text = value.addressStringFromLatLng != null ? value.addressStringFromLatLng! : PATextString.acquiringLocation;
             return Stack(
               children: [
-      
+
                 getGoogleMap( dark),
                 value.buildProfileTile(context, _homeViewModel.getUser!.firstName, Provider.of<UserViewModel>(context, listen:  false).getCarPhotoUrl()),
                 //value.buildTextField(context),
-                buildCurrentLocationIcon(context, dark, _homeViewModel, tripStartTextEditingController,
+                buildCurrentLocationIcon(context, dark, tripStartTextEditingController,
                     tripEndTextEditingController),
 
+                //  TODO - preform a null check on _mapController first, empty, return
+                // empty widget
                 getTripSelectionWidgets(Provider.of<UserViewModel>(context, listen: false), dark),
 
 
                 // map icon switcher
-                AnimatedSwitcher(
+                /*AnimatedSwitcher(
                   duration: const Duration(milliseconds: 300),
                   transitionBuilder: (child, animation){
                     return ScaleTransition(
@@ -137,8 +129,8 @@ class _HomeViewState extends State<HomeView> {
                     color: dark ? AppColours.paWhiteColour : AppColours.blackColour1,
                   ),
                 ),
-                ),
-
+                ),*/
+                Provider.of<HomeViewModel>(context, listen: false).getMapIcon(dark, context),
 
               ],
             );
@@ -150,9 +142,10 @@ class _HomeViewState extends State<HomeView> {
 
   }
 
-  Future<void> resetMapBounds(LatLngBounds latLngBounds) async {
-    final GoogleMapController controller = await _googleMapCompleterController!.future;
-    controller.animateCamera(CameraUpdate.newLatLngBounds(latLngBounds, 65));
+
+  Future<void> resetMapBounds(LatLngBounds latLngBounds, GoogleMapController mapController) async {
+    //final GoogleMapController controller = await _googleMapCompleterController!.future;
+    mapController.animateCamera(CameraUpdate.newLatLngBounds(latLngBounds, 65));
   }
 
   Widget getTripSelectionWidgets(UserViewModel userViewModel, bool dark)  {
@@ -166,7 +159,6 @@ class _HomeViewState extends State<HomeView> {
         return TripConfirmationWidget(
           dark: dark, stationAddress: Provider.of<UserViewModel>(context).addressStation!,
           startAddress: Provider.of<UserViewModel>(context).addressStringOrigin!,
-          homeViewModel: _homeViewModel,
           pLineCoordinateList: pLineCoordinateList,
           polylineSet: _homeViewModel.polylineSet,
           mapController: _googleMapCompleterController,
@@ -181,7 +173,6 @@ class _HomeViewState extends State<HomeView> {
       TripConfirmationWidget(
         dark: dark, stationAddress: Provider.of<UserViewModel>(context).addressStation!,
         startAddress: Provider.of<UserViewModel>(context).addressStringOrigin!,
-        homeViewModel: _homeViewModel,
         pLineCoordinateList: pLineCoordinateList,
         polylineSet: _homeViewModel.polylineSet,
         mapController: _googleMapCompleterController,
@@ -249,14 +240,16 @@ class _HomeViewState extends State<HomeView> {
           onMapCreated: (GoogleMapController googleMapController) async {
             _mapController = googleMapController;
             //  Error with provider here
-            await _homeViewModel.updateMapTheme(googleMapController, dark);
-            _googleMapCompleterController.complete(_mapController);
+            await Provider.of<HomeViewModel>(context, listen: false).updateMapTheme(googleMapController, dark);
+
+            // TODO - NOT SURE IF I NEED THIS??
+            //_googleMapCompleterController.complete(_mapController);
 
             //  DON'T use BuildContext across asynchronous gaps.
             if (!context.mounted) return;
-            await _homeViewModel.getUserCurrentLocation(
+            await Provider.of<HomeViewModel>(context, listen: false).getUserCurrentLocation(
               context,
-              _homeViewModel,
+                Provider.of<HomeViewModel>(context, listen: false),
               _mapController
             );
           },

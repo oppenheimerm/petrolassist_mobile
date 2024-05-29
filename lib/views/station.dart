@@ -219,6 +219,7 @@ class _StationViewState extends State<StationView> {
                       image: dark ? const AssetImage('assets/images/icons/pump-assistance-icon-light.png',) : const AssetImage('assets/images/icons/pump-assistance-icon-dark.png',),
                     ),
                   ),
+
                   const SizedBox( width: PAAppStylesConstants.spaceBetweenItems,),
                   Text(
                     widget.station.stationOnline ? "YES" : "NO",

@@ -3,6 +3,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:petrol_assist_mobile/resources/theme.dart';
 import 'package:petrol_assist_mobile/service/locator.dart';
 import 'package:petrol_assist_mobile/view_models/auth_vm.dart';
+import 'package:petrol_assist_mobile/view_models/home_vm.dart';
 import 'package:petrol_assist_mobile/view_models/user_vm.dart';
 import 'package:petrol_assist_mobile/view_models/verify_email_vm.dart';
 import 'package:petrol_assist_mobile/views/splash_view.dart';
@@ -42,7 +43,12 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (context) => UserViewModel(),
         ),
-        ChangeNotifierProvider(create: (context) => VerifyEmailViewModel()),
+        ChangeNotifierProvider(
+            create: (context) => VerifyEmailViewModel()
+        ),
+        ChangeNotifierProvider(
+            create: (context) => HomeViewModel()
+        ),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:petrol_assist_mobile/view_models/home_vm.dart';
 import 'package:petrol_assist_mobile/view_models/search_station_vm.dart';
 import 'package:provider/provider.dart';
 
@@ -112,7 +111,6 @@ class TripSelectorWidget extends StatelessWidget {
                                     searchStationsViewModel.getNearestStations(
                                         Provider.of<UserViewModel>(context, listen: false).locationOrigin!.latitude,
                                         Provider.of<UserViewModel>(context, listen: false).locationOrigin!.longitude,
-                                        1,
                                         0
                                     );
                                     Navigator.of(context).push(
@@ -120,7 +118,6 @@ class TripSelectorWidget extends StatelessWidget {
                                         builder: (context) => SearchStationsView(
                                             latitude: Provider.of<UserViewModel>(context, listen: false).locationOrigin!.latitude,
                                             longitude: Provider.of<UserViewModel>(context, listen: false).locationOrigin!.longitude,
-                                            countryId: 1,
                                             distanceUnit: 0,
                                         ),
                                       ),

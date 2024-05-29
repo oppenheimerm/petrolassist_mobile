@@ -30,9 +30,12 @@ class HomeViewModel with ChangeNotifier {
   final PANetworkService _networkService = PANetworkService();
 
   Position? _userPosition;
-  //  TODO - remvove if not being used
-  bool _loadingMap = true;
   bool _searchStationsLoading = true;
+  bool _showMapIcon = true;
+
+  //  TODO - remvove if not being used
+  //bool _loadingMap = true;
+
   List<StationModel>? _stations;
 
   String? _addressStringFromLatLng;
@@ -47,11 +50,13 @@ class HomeViewModel with ChangeNotifier {
 
   UserModel? get getUser => LocalStorageService.getUserFromDisk();
   Position? get currentPosition => _userPosition;
+
   bool get searchStationsLoading => _searchStationsLoading;
 
   String? get addressStringFromLatLng { return _addressStringFromLatLng; }
   String? get addressStringToLatLng { return _addressStringToLatLng; }
   Set<Polyline> get polylineSet { return _polylineSet; }
+  bool get showMapIcon { return _showMapIcon; }
 
   set addressStringFromLatLng(String? addressString){
     _addressStringFromLatLng = addressStringFromLatLng;
@@ -62,6 +67,7 @@ class HomeViewModel with ChangeNotifier {
     _searchStationsLoading = loading;
     notifyListeners();
   }
+
   set addressStringToLatLng(String? addressString){
     _addressStringToLatLng = addressString;
     notifyListeners();
@@ -69,6 +75,11 @@ class HomeViewModel with ChangeNotifier {
 
   set polylineSet(Set<Polyline> val) {
     _polylineSet = val;
+    notifyListeners();
+  }
+
+  set showMapIcon(bool val){
+    _showMapIcon = val;
     notifyListeners();
   }
 
@@ -164,7 +175,7 @@ class HomeViewModel with ChangeNotifier {
     return status;
   }
 
-  void cancelTrip( BuildContext context, UserViewModel vm, HomeViewModel homeVM){
+  void cancelTrip( BuildContext context, UserViewModel vm){
     //  RESET
     //  UserView model
     vm.locationOrigin = null;
@@ -186,6 +197,7 @@ class HomeViewModel with ChangeNotifier {
     addressStringFromLatLng = null;
     addressStringToLatLng = null;
     addressStringFromLatLng = null;
+    showMapIcon = true;
     polylineSet.clear();
 
   }
@@ -253,14 +265,12 @@ class HomeViewModel with ChangeNotifier {
 
 
             userVM.boundLatLng = boundLatLng;
-            // reset map bounds
-            await resetMapBounds(boundLatLng, mapController);
 
             Marker originMarker = Marker(
-              markerId: const MarkerId("originID"),
-              infoWindow: InfoWindow(title: userVM.addressStringOrigin, snippet: "Start location"),
-              position: userVM.locationOrigin!,
-              icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen)
+                markerId: const MarkerId("originID"),
+                infoWindow: InfoWindow(title: userVM.addressStringOrigin, snippet: "Start location"),
+                position: userVM.locationOrigin!,
+                icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen)
             );
 
             Marker destinationMarker = Marker(
@@ -272,13 +282,14 @@ class HomeViewModel with ChangeNotifier {
 
             userVM.markerSet.add(originMarker);
             userVM.markerSet.add(destinationMarker);
+            showMapIcon = false;
 
             Circle originCircle = Circle(
-              circleId: const CircleId("originId"),
-              fillColor: dark ? AppColours.paWhiteColour : AppColours.paBlackColour1,
-              radius: 12,
-              strokeColor: dark ? AppColours.paWhiteColour : AppColours.paBlackColour1,
-              center: userVM.locationOrigin!
+                circleId: const CircleId("originId"),
+                fillColor: dark ? AppColours.paWhiteColour : AppColours.paBlackColour1,
+                radius: 12,
+                strokeColor: dark ? AppColours.paWhiteColour : AppColours.paBlackColour1,
+                center: userVM.locationOrigin!
             );
 
             Circle destinationCircle = Circle(
@@ -292,6 +303,10 @@ class HomeViewModel with ChangeNotifier {
             userVM.circleSet.add(originCircle);
             userVM.circleSet.add(destinationCircle);
 
+
+            // reset map bounds
+            await resetMapBounds(boundLatLng, mapController);
+
             status = OperationStatus(true, AppConsts.noNetworkDetected, AppConsts.operationFailed);
 
 
@@ -299,8 +314,6 @@ class HomeViewModel with ChangeNotifier {
             OperationStatus status = OperationStatus(false, AppConsts.couldNotCompleteOperation, AppConsts.couldNotGetPolyLinePoints);
           }
         }
-
-
       }
       else{
         // Failed
@@ -311,19 +324,57 @@ class HomeViewModel with ChangeNotifier {
 
   }
 
+  Widget getMapIcon(bool dark, BuildContext context){
+
+    //  Just return an empty widget if true
+    if(Provider.of<HomeViewModel>(context, listen: true).showMapIcon){
+      return AnimatedSwitcher(
+        duration: const Duration(milliseconds: 300),
+        transitionBuilder: (child, animation){
+          return ScaleTransition(
+            scale: animation,
+            child: child,
+          );
+        },
+        child: Provider.of<UserViewModel>(context, listen: true).hasStartAddress ?
+        Align(
+          alignment: Alignment.center,
+          child:   Image(
+            height: 36,
+            image: AssetImage( dark ? AppConsts.locationPinIconLight : AppConsts.locationPinIconDark),
+          ),
+        )
+            :
+        Align(
+          alignment: Alignment.center,
+          child: Icon(
+            Icons.refresh_sharp,
+            size: 36,
+            color: dark ? AppColours.paWhiteColour : AppColours.blackColour1,
+          ),
+        ),
+      );
+    }else{
+      return const SizedBox.shrink();
+    }
+  }
+
   Future<void> resetMapBounds(LatLngBounds latLngBounds, Completer<GoogleMapController> mapController) async {
-    final GoogleMapController controller = await mapController!.future;
+    final GoogleMapController controller = await mapController.future;
     controller.animateCamera(CameraUpdate.newLatLngBounds(latLngBounds, 65));
   }
 
+  //  TODO - remvove if not being used
+  /*
   void setLoadingState(bool state) {
     _loadingMap = state;
     notifyListeners();
-  }
+  }*/
 
-  bool getLoadingState() {
+  //  TODO - remvove if not being used
+  /*bool getLoadingState() {
     return _loadingMap;
-  }
+  }*/
 
 
   Widget buildProfileTile(BuildContext context, String name, imageUrl) {
@@ -378,6 +429,7 @@ class HomeViewModel with ChangeNotifier {
       ),
     );
   }
+
 
   getUserCurrentLocation(BuildContext context, HomeViewModel homeVM,
       GoogleMapController? mapController) async {
@@ -629,8 +681,7 @@ Container doModalBottomSheet(BuildContext context, bool dark,
         });
   }
 
-  Widget buildCurrentLocationIcon(BuildContext context, bool dark, HomeViewModel homeViewModel,
-      TextEditingController tripStartTextEditingController,  TextEditingController tripEndTextEditingController) {
+  Widget buildCurrentLocationIcon(BuildContext context, bool dark, TextEditingController tripStartTextEditingController,  TextEditingController tripEndTextEditingController) {
     return Align(
       alignment: Alignment.bottomRight,
       child: Padding(
@@ -647,7 +698,7 @@ Container doModalBottomSheet(BuildContext context, bool dark,
                     initialChildSize: 0.85,
                     maxChildSize: 0.85,
                     minChildSize: 0.25,
-                      builder: (context, scrollController) => doModalBottomSheet(context, dark, homeViewModel,
+                      builder: (context, scrollController) => doModalBottomSheet(context, dark, Provider.of<HomeViewModel>(context),
                       tripStartTextEditingController, tripEndTextEditingController),
                   );
                 });
