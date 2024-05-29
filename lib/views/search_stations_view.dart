@@ -16,13 +16,11 @@ class SearchStationsView extends StatefulWidget {
     super.key,
     required this.latitude,
     required this.longitude,
-    required this.countryId,
     required this.distanceUnit
   });
 
   final double latitude;
   final double longitude;
-  final int countryId;
   final int distanceUnit;
   @override
   State<SearchStationsView> createState() => _SearchStationsViewState();
@@ -37,7 +35,7 @@ class _SearchStationsViewState extends State<SearchStationsView> {
   void initState(){
     //  initState must be a method which takes no parameters and returns void{
     _searchStationViewModel.getNearestStations(widget.latitude, widget.longitude,
-        widget.countryId, widget.distanceUnit);
+        widget.distanceUnit);
 
     super.initState();
   }
